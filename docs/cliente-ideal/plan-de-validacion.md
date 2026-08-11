@@ -115,13 +115,37 @@ pago, el modelo de calificación funciona a ciegas en su criterio de mayor peso.
 | # | Hipótesis | Confianza inicial | Prueba | Confirma si | Descarta si |
 |---|-----------|-------------------|--------|-------------|-------------|
 | H1 | El **Horse** es el modelo dominante para acarreo y faena en el Sur y el interior | Alta | Cruce sucursal × modelo + uso previsto | Horse supera el 40 % de las ventas en sucursales del interior, con uso previsto *carga/faena* como primer motivo | Su participación en el interior no se distingue de la del resto de plazas |
-| H2 | El **Owen** es el modelo preferido del mototaxista urbano de pasajeros | Alta | Cruce modelo × uso previsto *mototaxi* | Más del 50 % de las ventas marcadas como mototaxi son Owen | El uso mototaxi se reparte parejo entre tres o más modelos |
+| H2 | El **Owen** es el modelo preferido del mototaxista urbano de pasajeros | **Media — en disputa** | Cruce modelo × uso previsto *mototaxi* | Más del 50 % de las ventas marcadas como mototaxi son Owen | El **Horse** supera al Owen en ese cruce, o se reparte parejo entre tres o más modelos |
 | H3 | La **Xpress** concentra a los compradores de primer vehículo | Alta | Cruce modelo × edad × primera compra | Edad promedio del comprador de Xpress al menos 6 años menor que la media general | La edad del comprador de Xpress no difiere de la media |
 | H4 | El rider de aplicaciones decide **por costo de operación y disponibilidad de repuestos**, no por precio de lista | Media | Entrevistas, preguntas 3, 4 y 6 | 6 de cada 10 entrevistados mencionan consumo, repuestos o tiempo de taller antes que precio | El precio de compra domina de forma clara la justificación |
 | H5 | El ingreso generado por la moto **sostiene la cuota mejor** que un sueldo fijo | Media | Cruce fuente de ingreso × mora | La mora del segmento productivo es menor que la del segmento con sueldo fijo | Es igual o mayor |
 | H6 | Existe un segmento **utilitario doméstico** en el interior, distinto del productivo, con volumen relevante | Media | Registro de uso previsto en punto de venta | Al menos 15 % de las ventas del interior declaran *diligencias y familia* | Queda por debajo del 5 % |
 | H7 | Existe un segmento de **usuaria urbana / scooter** con volumen suficiente para atenderlo aparte | **Hipótesis — baja** | Registro de género × modelo, en capitales | Las mujeres superan el 12 % de las compradoras en capitales, concentradas en scooter/línea urbana | Se mantiene por debajo del 5 % sin concentración por modelo |
 | H8 | El comprador guiado solo por precio, sin ingreso ligado a la moto, es el de **peor comportamiento de pago** | Media | Cruce inicial baja + sueldo/apoyo familiar × mora | Su tasa de atraso duplica la del promedio | No se diferencia del promedio |
+| H9 | El rider de aplicaciones es un **cliente recurrente con ciclo de reposición de 12–24 meses**, no un comprador único | Media | Cruce de cédula o documento del comprador contra ventas repetidas, ventana de 3 años | Más del 25 % de los compradores del segmento productivo repite compra dentro de 24 meses | La tasa de recompra a 24 meses queda por debajo del 10 % |
+
+> **Nota sobre H2 — por qué bajó de confianza.** El brief reportó el Owen como preferencia
+> del mototaxista. La investigación de fuentes públicas encontró lo contrario: la
+> comunicación de Empire Keeway y la prensa del sector asocian explícitamente el **Horse**
+> con «mototaxistas y repartidores», mientras el Owen aparece posicionado por confort y
+> ergonomía, y el Owen 200S bajo un eje estético.
+>
+> **Esto no resuelve la pregunta a favor de las fuentes públicas.** El conocimiento de piso
+> de venta de Arranca es evidencia primaria y es superior a la prensa: la comunicación de
+> marca suele ir por detrás del comportamiento real de calle. Pero la discrepancia obliga a
+> tratar H2 como hipótesis genuinamente abierta, con umbral de descarte simétrico, y a **no
+> construir argumentos de venta que dependan de la respuesta hasta resolverla**.
+
+> **Nota sobre H9 — por qué se añadió.** No estaba en el diseño inicial. La investigación
+> encontró un testimonio documentado de **tres motos en dos años** en el segmento de
+> aplicaciones, lo que sugiere un ciclo de reposición corto. Es un caso aislado y no una
+> media, pero es coherente con el régimen de uso (10–14 h/día, 6–7 días/semana) y con el
+> riesgo de robo.
+>
+> Si se confirma, **cambia el cálculo de valor de vida del cliente por completo** y justifica
+> invertir en retención —recompra, financiamiento preaprobado para el segundo ciclo— mucho
+> más de lo que sugeriría una venta aislada. Es la hipótesis de mayor consecuencia económica
+> de las nueve, y se resuelve con data que Arranca ya tiene.
 
 ---
 
@@ -136,8 +160,10 @@ es una semana de datos perdida para siempre. Empezar aquí, hoy, aunque el resto
 se ejecute nunca.
 
 **Segundo — pedir la extracción de financiamiento (semanas 1–2).**
-El dato ya existe, solo hay que solicitarlo. Resuelve H1, H2, H3, H5 y H8 con data
-histórica, sin esperar a acumular ventas nuevas. Es el mayor retorno inmediato del plan.
+El dato ya existe, solo hay que solicitarlo. Resuelve **H1, H2, H3, H5, H8 y H9** con data
+histórica, sin esperar a acumular ventas nuevas. Es el mayor retorno inmediato del plan — y
+H9, que es la hipótesis de mayor consecuencia económica, se responde aquí sin coste
+adicional.
 
 **Tercero — entrevistas a los dos segmentos productivos (semanas 3–5).**
 Rider de aplicaciones y mototaxista urbano. Son los de mayor recurrencia de postventa y los
