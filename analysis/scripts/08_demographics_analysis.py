@@ -1,87 +1,115 @@
 """
 Delinquency analysis by age and sex.
-Reads raw schema to find customer demographics, merges with lease_features_v2.
+Extracts customers with birth_date, calculates age cohorts, and analyzes morosidad by demographics.
 """
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine, text, inspect
+from sqlalchemy import create_engine, text
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql:///arranca_moros")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
 
-def explore_schema():
-    """Find tables and columns related to customer demographics."""
-    engine = create_engine(DATABASE_URL)
-    inspector = inspect(engine)
-
-    print("\n=== SCHEMA EXPLORATION ===\n")
-
-    # List all schemas
-    schemas = inspector.get_schema_names()
-    print(f"Schemas: {schemas}\n")
-
-    # Look for customer/people tables in raw schema
-    for schema in ["raw", "public"]:
-        if schema not in schemas:
-            continue
-
-        tables = inspector.get_table_names(schema=schema)
-        print(f"\n{schema} schema tables:")
-        for table in sorted(tables):
-            cols = inspector.get_columns(table, schema=schema)
-            col_names = [c['name'] for c in cols]
-            print(f"  {table}: {col_names[:10]}...")  # First 10 cols
-
-            # Look for demographics-related columns
-            if any(x in ' '.join(col_names).lower() for x in ['birth', 'dob', 'fecha', 'sexo', 'gender', 'customer', 'person']):
-                print(f"    ^ Contains demographics fields")
-
-
-def main():
+def main() -> None:
     engine = create_engine(DATABASE_URL)
 
-    # First, explore to find the right table
-    explore_schema()
+    # Extract leases with customer demographics and morosidad v2
+    print("Loading customer demographics and morosidad data...")
+    df = pd.read_sql(text("""
+        SELECT
+            l.lease_id,
+            l.customer_id,
+            l.delinquent_4,
+            l.max_arrears,
+            l.n_due_observed,
+            c.birth_date,
+            c.sex,
+            l.origination_date
+        FROM analysis.lease_features_v2 l
+        LEFT JOIN raw.customers_customer c ON l.customer_id = c.id
+        WHERE l.category_id IN ('1', '13')
+          AND l.model_norm IS NOT NULL
+          AND c.birth_date IS NOT NULL
+          AND c.sex IS NOT NULL
+    """), engine)
 
-    # Try to find customer birth date and sex
-    print("\n\n=== SEARCHING FOR DEMOGRAPHICS DATA ===\n")
+    print(f"Loaded {len(df)} leases with complete demographics")
 
-    # Common patterns
-    try:
-        with engine.connect() as conn:
-            # Look for customers table with birth info
-            result = conn.execute(text("""
-                SELECT table_name, column_name
-                FROM information_schema.columns
-                WHERE column_name ILIKE ANY(ARRAY['%birth%', '%dob%', '%fecha%nac%', '%sexo%', '%gender%'])
-                ORDER BY table_name, ordinal_position
-            """))
+    # Filter to v2-eligible (mature enough for delinquent_4)
+    df = df[df["n_due_observed"] >= 4].copy()
+    print(f"After maturity filter: {len(df)} leases")
 
-            found_cols = result.fetchall()
-            if found_cols:
-                print("Found demographic columns:")
-                for table, col in found_cols:
-                    print(f"  {table}.{col}")
-            else:
-                print("No obvious demographic columns found.")
-                print("Checking raw schema tables for structure...")
+    # Calculate age at origination
+    df["birth_date"] = pd.to_datetime(df["birth_date"])
+    df["origination_date"] = pd.to_datetime(df["origination_date"])
+    df["age_at_origination"] = (
+        (df["origination_date"] - df["birth_date"]).dt.days / 365.25
+    ).round(1)
 
-                # List all tables in raw schema
-                result = conn.execute(text("""
-                    SELECT table_name
-                    FROM information_schema.tables
-                    WHERE table_schema = 'raw'
-                    LIMIT 20
-                """))
-                tables = [row[0] for row in result.fetchall()]
-                print(f"\nRaw schema tables: {tables}")
+    # Age cohorts
+    df["age_group"] = pd.cut(
+        df["age_at_origination"],
+        bins=[0, 25, 35, 45, 55, 65, 100],
+        labels=["18-25", "26-35", "36-45", "46-55", "56-65", "65+"],
+        right=False
+    )
 
-    except Exception as e:
-        print(f"Error exploring schema: {e}")
+    # Normalize sex (uppercase, handle nulls)
+    df["sex"] = df["sex"].astype(str).str.upper().replace({"NONE": None, "NAN": None, "": None})
+
+    print(f"\nAge groups distribution:\n{df['age_group'].value_counts().sort_index()}")
+    print(f"\nSex distribution:\n{df['sex'].value_counts()}")
+
+    # Delinquency by age group
+    age_summary = df.groupby("age_group", observed=True).agg(
+        n_leases=("lease_id", "count"),
+        pct_delinquent_4=("delinquent_4", "mean"),
+        avg_max_arrears=("max_arrears", "mean"),
+        avg_age=("age_at_origination", "mean")
+    ).reset_index()
+    age_summary["pct_delinquent_4"] = (age_summary["pct_delinquent_4"] * 100).round(1)
+    age_summary["avg_max_arrears"] = age_summary["avg_max_arrears"].round(2)
+    age_summary["avg_age"] = age_summary["avg_age"].round(1)
+
+    # Delinquency by sex
+    sex_summary = df.groupby("sex", observed=True).agg(
+        n_leases=("lease_id", "count"),
+        pct_delinquent_4=("delinquent_4", "mean"),
+        avg_max_arrears=("max_arrears", "mean"),
+        avg_age=("age_at_origination", "mean")
+    ).reset_index()
+    sex_summary["pct_delinquent_4"] = (sex_summary["pct_delinquent_4"] * 100).round(1)
+    sex_summary["avg_max_arrears"] = sex_summary["avg_max_arrears"].round(2)
+    sex_summary["avg_age"] = sex_summary["avg_age"].round(1)
+
+    # Delinquency by age × sex
+    age_sex_summary = df.groupby(["age_group", "sex"], observed=True).agg(
+        n_leases=("lease_id", "count"),
+        pct_delinquent_4=("delinquent_4", "mean"),
+        avg_max_arrears=("max_arrears", "mean")
+    ).reset_index()
+    age_sex_summary = age_sex_summary[age_sex_summary["n_leases"] >= 5]  # Min n=5
+    age_sex_summary["pct_delinquent_4"] = (age_sex_summary["pct_delinquent_4"] * 100).round(1)
+    age_sex_summary["avg_max_arrears"] = age_sex_summary["avg_max_arrears"].round(2)
+
+    # Save
+    age_summary.to_csv(os.path.join(DATA_DIR, "age_summary.csv"), index=False)
+    sex_summary.to_csv(os.path.join(DATA_DIR, "sex_summary.csv"), index=False)
+    age_sex_summary.to_csv(os.path.join(DATA_DIR, "age_sex_summary.csv"), index=False)
+
+    print("\n=== DELINQUENCY BY AGE ===")
+    print(age_summary.to_string(index=False))
+
+    print("\n=== DELINQUENCY BY SEX ===")
+    print(sex_summary.to_string(index=False))
+
+    print("\n=== DELINQUENCY BY AGE × SEX ===")
+    print(age_sex_summary.to_string(index=False))
+
+    print(f"\nWrote age_summary.csv, sex_summary.csv, age_sex_summary.csv -> {DATA_DIR}")
 
 
 if __name__ == "__main__":
