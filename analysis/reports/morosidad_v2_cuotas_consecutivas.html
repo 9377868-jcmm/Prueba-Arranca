@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morosidad v2: 4 Cuotas Consecutivas</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-1-soft:  #cde2fb;
+    --series-2:       #eb6834;
+    --series-4:       #eda100;
+    --good:           #0ca30c;
+    --critical:       #d03b3b;
+    --success-text:   #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-1-soft:  #184f95;
+      --series-2:       #d95926;
+      --series-4:       #c98500;
+      --good:           #0ca30c;
+      --critical:       #e66767;
+      --success-text:   #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-1-soft:  #184f95;
+    --series-2:       #d95926;
+    --series-4:       #c98500;
+    --good:           #0ca30c;
+    --critical:       #e66767;
+    --success-text:   #0ca30c;
+  }
+
+  * { box-sizing: border-box; }
+  .viz-root {
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 32px 20px 80px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header.page-head { margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--series-1);
+  }
+  h1 { font-size: 26px; margin: 6px 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 14.5px; max-width: 760px; line-height: 1.5; }
+  .privacy-note {
+    margin-top: 14px; font-size: 12.5px; color: var(--text-muted);
+    border-left: 2px solid var(--baseline); padding-left: 10px; max-width: 760px; line-height: 1.5;
+  }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card h3 { font-size: 13.5px; margin: 0 0 8px; color: var(--text-secondary); }
+  .card .desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; max-width: 720px; line-height: 1.55;}
+  .card .desc b { color: var(--text-primary); }
+  .callout {
+    background: color-mix(in srgb, var(--series-2) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--series-2) 30%, transparent);
+    border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.55;
+    color: var(--text-primary); margin-bottom: 16px; max-width: 720px;
+  }
+  .callout b { color: var(--series-2); }
+  .callout.good {
+    background: color-mix(in srgb, var(--good) 10%, transparent);
+    border-color: color-mix(in srgb, var(--good) 30%, transparent);
+  }
+  .callout.good b { color: var(--success-text); }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .kpi .label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi .value { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .kpi .foot { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+  @media (max-width: 760px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .grid-line { stroke: var(--grid); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .bar-fill { fill: var(--series-1); }
+  .bar-fill.alt { fill: var(--series-4); }
+  .bar-label { fill: var(--text-primary); font-size: 12px; }
+  .bar-cat   { fill: var(--text-secondary); font-size: 12px; }
+
+  .bar-row { cursor: pointer; }
+  .bar-row rect.bar-fill { transition: opacity .12s; }
+  .bar-row:hover rect.bar-fill { opacity: .78; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 50;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 11px; font-size: 12.5px; color: var(--text-primary);
+    box-shadow: 0 6px 20px rgba(0,0,0,.18);
+    opacity: 0; transform: translateY(2px); transition: opacity .1s, transform .1s;
+    max-width: 260px; line-height: 1.45;
+  }
+  .tooltip.show { opacity: 1; transform: translateY(0); }
+  .tooltip .t-title { font-weight: 600; margin-bottom: 2px; }
+  .tooltip .t-row { color: var(--text-secondary); }
+  .tooltip .t-row b { color: var(--text-primary); }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table th {
+    text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: .03em; padding: 7px 9px; border-bottom: 1px solid var(--grid);
+  }
+  table.data-table td { padding: 8px 9px; border-bottom: 1px solid var(--grid); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag.sig { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--success-text); }
+  .tag.ns  { background: color-mix(in srgb, var(--text-muted) 18%, transparent); color: var(--text-secondary); }
+  .muted-num { color: var(--text-muted); }
+  .legend-row { display:flex; gap:16px; align-items:center; font-size:11.5px; color:var(--text-secondary); margin-top:10px; flex-wrap:wrap; }
+  .legend-swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+
+  .two-col { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px; }
+  .two-col-even { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 860px) { .two-col, .two-col-even { grid-template-columns: 1fr; } }
+
+  ul.takeaways { margin: 0; padding-left: 18px; }
+  ul.takeaways li { margin-bottom: 12px; font-size: 13.5px; line-height: 1.6; color: var(--text-primary); }
+  ul.takeaways b { color: var(--series-1); }
+  ul.takeaways .hyp-tag {
+    display:inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing:.03em;
+    padding: 1px 7px; border-radius: 10px; margin-right: 7px; vertical-align: 2px;
+  }
+  .hyp-tag.confirmed { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--success-text); }
+  .hyp-tag.revised   { background: color-mix(in srgb, var(--series-2) 18%, transparent); color: var(--series-2); }
+  .hyp-tag.new       { background: color-mix(in srgb, var(--series-1) 18%, transparent); color: var(--series-1); }
+
+  footer.methodology { color: var(--text-muted); font-size: 12px; line-height: 1.65; margin-top: 28px; }
+  footer.methodology h3 { color: var(--text-secondary); font-size: 12.5px; margin-bottom: 6px; margin-top:16px;}
+  footer.methodology code { background: var(--grid); padding: 1px 5px; border-radius: 4px; }
+
+  .heat-cell { stroke: var(--surface-1); stroke-width: 2; cursor: pointer; }
+  .heat-label { fill: var(--text-secondary); font-size: 9.5px; }
+</style>
+</head>
+<body>
+
+<div class="viz-root" data-palette="#2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4,#008300,#4a3aa7,#e34948">
+  <div class="wrap">
+    <header class="page-head">
+      <div class="eyebrow">Investigación de cliente ideal · DalePlay (backup histórico) · v2</div>
+      <h1>Morosidad v2: 4 cuotas consecutivas vencidas</h1>
+      <p class="sub">
+        Segunda vuelta del análisis, con una definición de morosidad basada en pagos reales (no en eventos de
+        cobranza): se reconstruyó el cronograma de cuotas de cada contrato a partir de <code>payment_type</code>
+        (semanal / quincenal / mensual) y se comparó contra el historial real de <code>payments_payment</code>.
+        <b>Morosidad = alcanzó 4 o más cuotas vencidas de forma consecutiva</b> en algún punto de la vida del
+        contrato. Se añade segmentación trimestral por fecha de ingreso y una matriz de correlación entre
+        <b>todos</b> los factores disponibles (producto, plan, sucursal, cliente, cosecha), más un modelo
+        multivariado para separar efectos confundidos entre sí.
+      </p>
+      <p class="privacy-note">
+        Nota de privacidad: igual que en la primera vuelta, solo se muestran cifras agregadas y anonimizadas —
+        nada de nombres, cédulas, teléfonos ni correos. La base restaurada permanece local.
+      </p>
+    </header>
+
+    <div class="callout">
+      <b>Por qué cambian los números frente al primer análisis:</b> la v1 marcaba "morosidad" con cualquier
+      evento negativo registrado en el historial de cobranza (una señal de proceso, subjetiva y ruidosa). La v2
+      exige 4 cuotas consecutivas sin pagar — un umbral objetivo y más estricto, calculado cuota por cuota desde
+      los pagos reales. Bajo v1 la morosidad "alguna vez" era 49.5%; bajo v2 (4 cuotas consecutivas) es
+      <b>33.3%</b>. Varias conclusiones de la v1 <b>no sobreviven</b> este cambio de definición — se detalla más
+      abajo en "Hipótesis".
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="label">Contratos moto con cronograma reconstruible</div>
+        <div class="value">2,416</div>
+        <div class="foot">De los 2,419 con producto = moto</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Morosidad (≥4 cuotas consecutivas)</div>
+        <div class="value" style="color:var(--critical)">33.3%</div>
+        <div class="foot">vs. 49.5% bajo la definición v1</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Cuotas máximas en mora (promedio)</div>
+        <div class="value">3.9</div>
+        <div class="foot">Distribución muy sesgada — mediana ≈ 2</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Score del cliente (modelo ajustado)</div>
+        <div class="value" style="color:var(--success-text)">OR 0.06</div>
+        <div class="foot">Por +1 DE de score, controlando todo lo demás</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Morosidad por modelo de moto (v2)</h2>
+      <p class="desc">
+        % de contratos que llegaron a 4+ cuotas consecutivas vencidas, por modelo (mínimo 15 contratos).
+        Rango: 12.5% (Xpress Lite) a 40.6% (EK Xpress de Paleta).
+        <b>El ranking cambió frente a v1</b>: Horse Rayas Locas era el peor bajo la definición por eventos
+        (70.8%) y ahora cae al puesto 3 (39.3%); EK Xpress de Paleta, que estaba a la mitad de la tabla en v1,
+        ahora encabeza la lista. Esto es evidencia de que "qué modelo es más riesgoso" depende bastante de cómo
+        se mide la morosidad — trátese como hipótesis a monitorear, no como hecho fijo del producto.
+      </p>
+      <svg id="chart-model" width="100%" viewBox="0 0 960 500" role="img" aria-label="Morosidad v2 por modelo de moto"></svg>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>El score explica casi toda la diferencia entre modelos</h2>
+        <p class="desc">
+          Cada punto es un modelo (eje X = score promedio del cliente que lo arrendó, eje Y = % morosidad v2,
+          tamaño = contratos). La correlación a nivel de modelo es <b>r = −0.91</b> (p&lt;0.0001, n=14) — más
+          fuerte que en v1 (r=−0.55). A nivel de contrato individual, score↔morosidad es <b>r = −0.73</b>
+          (p≈0, n=2,416), y se sostiene como el efecto dominante incluso en el modelo multivariado (ver más
+          abajo). Ver también la salvedad sobre si el score es estático (al origen) o dinámico/conductual —
+          sección Hipótesis.
+        </p>
+        <svg id="chart-scatter" width="100%" viewBox="0 0 480 380" role="img" aria-label="Score de cliente vs morosidad v2 por modelo"></svg>
+      </div>
+
+      <div class="card">
+        <h2>¿Qué se asocia más con la morosidad?</h2>
+        <p class="desc">Fuerza de asociación con "4 cuotas consecutivas" (V de Cramér / correlación, valor absoluto). Barra roja = score y variables ligadas al cliente; azul = producto/operación.</p>
+        <svg id="chart-ranked" width="100%" viewBox="0 0 480 360" role="img" aria-label="Ranking de asociación con morosidad"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>El plan de pago: un sesgo mecánico de la métrica</h2>
+      <p class="desc">
+        Comparación entre la <b>tasa cruda</b> (% de contratos con 4+ cuotas seguidas vencidas) y la
+        <b>tasa ajustada por madurez</b> (cuotas máximas en mora ÷ cuotas ya vencidas — normaliza por cuántas
+        oportunidades tuvo cada contrato de atrasarse). El ranking se <b>invierte por completo</b>: en crudo,
+        semanal es el peor (39.7%) y mensual el mejor (18.9%); ajustado por madurez, mensual es el peor
+        (20.0% de sus cuotas vencidas terminan en mora) y semanal el mejor (13.4%). La razón es aritmética:
+        "4 cuotas" semanales equivalen a ~1 mes de atraso; "4 cuotas" mensuales equivalen a ~4 meses. El umbral
+        fijo en número de cuotas no es comparable entre planes de pago distintos.
+      </p>
+      <svg id="chart-payment" width="100%" viewBox="0 0 960 300" role="img" aria-label="Morosidad por plan de pago, cruda vs ajustada"></svg>
+      <div class="legend-row">
+        <span><span class="legend-swatch" style="background:var(--series-1)"></span>Tasa cruda (% contratos con 4+ cuotas)</span>
+        <span><span class="legend-swatch" style="background:var(--series-4)"></span>Tasa ajustada por madurez (cuotas en mora / cuotas vencidas)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Cohorte trimestral (fecha de ingreso)</h2>
+      <p class="desc">
+        La tasa <b>cruda</b> de morosidad por trimestre está sesgada: los contratos recientes (2026 Q1-Q2) aún
+        no han tenido tiempo de acumular 4 cuotas vencidas (barras claras = cohortes inmaduras, con pocas cuotas
+        vencidas observadas en promedio). La tasa <b>ajustada por madurez</b> cuenta una historia distinta a la
+        de la v1: en vez de empeorar en 2025, la morosidad por cuota vencida <b>mejoró de forma sostenida</b>
+        desde 2024Q3 (19.6%) hasta 2025Q4 (11.6%). El repunte en 2026Q1-Q2 es ruidoso (muy pocas cuotas
+        maduraron todavía) y no debe leerse como una reversión de tendencia sin más datos.
+      </p>
+      <svg id="chart-quarter" width="100%" viewBox="0 0 960 320" role="img" aria-label="Morosidad por cohorte trimestral"></svg>
+      <div class="legend-row">
+        <span><span class="legend-swatch" style="background:var(--series-1)"></span>Tasa ajustada por madurez</span>
+        <span><span class="legend-swatch" style="background:var(--baseline)"></span>Tasa cruda (referencia, sesgada por censura)</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>Morosidad por sucursal (cruda)</h2>
+        <p class="desc">Guarenas (42.7%, n=947) muy por encima de Barcelona (5.6%, n=18). Pero ver el modelo
+        multivariado: casi ninguna sucursal es significativa una vez se controla por score, plan de pago, plazo
+        y cosecha.</p>
+        <svg id="chart-branch" width="100%" viewBox="0 0 480 340" role="img" aria-label="Morosidad por sucursal"></svg>
+      </div>
+      <div class="card">
+        <h2>Modelo multivariado (regresión logística)</h2>
+        <p class="desc">
+          Odds ratio por factor, controlando todos los demás simultáneamente (n=2,412, pseudo-R²=0.57).
+          Puntos a la izquierda de 1× = protegen contra la morosidad; a la derecha = la aumentan. Líneas que
+          cruzan 1× = no significativo una vez controlado lo demás.
+        </p>
+        <svg id="chart-forest" width="100%" viewBox="0 0 480 420" role="img" aria-label="Odds ratios del modelo multivariado"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Matriz de asociación entre todos los factores</h2>
+      <p class="desc">
+        Fuerza de asociación (valor absoluto: V de Cramér para categórica-categórica, correlación-ratio (η) para
+        categórica-numérica, Pearson |r| para numérica-numérica) entre las 16 variables disponibles y los dos
+        indicadores de morosidad. El signo se omite en el mapa (una celda oscura solo dice "fuertemente
+        relacionadas", no en qué dirección) — el signo de los pares numérico-numérico relevantes se comenta en
+        el texto. Bloques a notar: <code>modelo↔marca↔precio</code> (0.77-0.94, esperado: el modelo define
+        precio y marca), <code>sucursal↔estado</code> (0.74, esperado: la sucursal define la región),
+        <code>plan_pago↔plazo↔cuota_mensual</code> (0.76-0.82, esperado: el plan de pago define la estructura de
+        cuotas) y <code>compra_venta↔gps_removido↔seguro_removido</code> (0.73-0.85: estas tres casi siempre
+        ocurren juntas, ver Hipótesis H6).
+      </p>
+      <svg id="chart-heatmap" width="100%" viewBox="0 0 900 620" role="img" aria-label="Matriz de asociación completa"></svg>
+    </div>
+
+    <div class="card">
+      <h2>Hipótesis: contraste con teoría y nuevas preguntas</h2>
+      <ul class="takeaways">
+        <li><span class="hyp-tag confirmed">Confirmada, más fuerte</span><b>El score de crédito es, con enorme diferencia, el mejor predictor</b> — se mantiene como el efecto dominante en el modelo multivariado (OR=0.061 por +1DE, controlando plan, plazo, sucursal, marca y cosecha). A nivel de modelo de moto, explica el 83% de la varianza en morosidad entre modelos (r²=0.83). <i>Pendiente de validar con el equipo:</i> si <code>score</code> es una foto de originación o se recalcula con el comportamiento de pago — en el segundo caso, la correlación mide en parte "el score ya sabe quién está en mora", no solo "quién va a caer en mora".</li>
+        <li><span class="hyp-tag revised">Revisada</span><b>La cosecha 2025 NO empeoró</b> frente a 2024, al contrario de lo que sugería la v1. Esa conclusión era un artefacto de censura: los contratos más viejos simplemente tuvieron más tiempo de acumular algún evento de cobranza. Con la tasa ajustada por madurez, la morosidad mejoró de forma sostenida trimestre a trimestre desde 2024Q3 hasta 2025Q4 (19.6% → 11.6%), y el modelo multivariado confirma la tendencia (OR=0.81 por trimestre, p&lt;0.001).</li>
+        <li><span class="hyp-tag new">Nueva</span><b>El plan de pago semanal no es "peor" que el mensual — la métrica de "cuotas consecutivas" simplemente favorece a los planes de cuota grande.</b> Ajustando por madurez, el orden se invierte (mensual 20.0% peor, semanal 13.4% mejor). Recomendación: para comparar planes de pago de forma justa, medir en <b>días de atraso</b> en vez de "número de cuotas", o usar un umbral que escale con la cadencia (p. ej. ~30 días de atraso equivalente).</li>
+        <li><span class="hyp-tag revised">Revisada</span><b>El efecto de sucursal es mayormente confusión, no una sucursal "mala" per se.</b> En crudo, Guarenas (42.7%) parece dramáticamente peor que Barcelona (5.6%). Pero en el modelo multivariado, con score/plan/plazo/cosecha controlados, ninguna sucursal es significativa (todas las CI cruzan 1×, salvo Temblador al borde, p=0.07). La brecha cruda probablemente refleja qué mezcla de planes de pago y perfiles de score atiende cada sucursal, no la calidad de la operación local.</li>
+        <li><span class="hyp-tag new">Nueva</span><b>El plazo (nº de cuotas) tiene un efecto propio</b>, incluso controlando por plan de pago (OR=2.09 por +1DE, p&lt;0.001) — contratos más largos, más allá de su cadencia, se asocian a más mora. Vale la pena probar si esto es capacidad de pago (cuota total más alta acumulada) o simplemente más tiempo de exposición a choques de ingreso.</li>
+        <li><span class="hyp-tag new">Nueva</span><b>Retirar el GPS o el seguro correlaciona débilmente con morosidad (V≈0.05-0.09)</b>, pero está casi totalmente explicado por <code>compra_venta</code> (conversión a venta directa, V=0.73-0.85 entre las tres). No parece ser una señal de riesgo independiente — probablemente ocurre cuando el contrato se liquida/convierte, no como comportamiento temprano de fuga. Para usarlo como alerta temprana habría que mirar la fecha en que se retiró el GPS/seguro relativa al inicio de la mora (dato no disponible en este dump).</li>
+        <li><span class="hyp-tag new">Nueva</span><b>Perfil de cliente ideal (v2):</b> score alto (el filtro más importante, con mucha diferencia), plazo corto, cosecha reciente-pero-madura (2025), sucursales grandes bien administradas más que sucursales específicas. El modelo de moto en sí aporta poca información una vez se conoce el score del comprador — <b>el catálogo no predice el riesgo, el cliente sí.</b></li>
+      </ul>
+    </div>
+
+    <footer class="methodology">
+      <h3>Metodología: reconstrucción del cronograma de cuotas</h3>
+      Para cada lease con <code>monthly_fee</code>, <code>fees_number</code> y <code>payment_type</code> válidos
+      (2,416 de 2,419 leases de moto), se generaron las fechas de vencimiento esperadas según la cadencia:
+      semanal (+7 días), mensual (+1 mes calendario) o quincenal "15last" (los días 15 y último de cada mes). Se
+      cruzó cada fecha de vencimiento contra el monto acumulado realmente pagado a esa fecha
+      (<code>payments_payment</code>, <code>status='PAID'</code>, excluyendo la cuota inicial), usando
+      asignación acumulada tipo FIFO: cuotas_pagadas(t) = ⌊pagado_acumulado(t) / cuota_mensual⌋. La mora en
+      cuotas en el momento t es cuotas_vencidas(t) − cuotas_pagadas(t); por construcción de la asignación
+      acumulada, "N cuotas en mora" son siempre las N fechas de vencimiento más recientes — de ahí que "mora de
+      N cuotas" y "N cuotas consecutivas vencidas" sean equivalentes aquí. <b>Morosidad = el máximo de esa serie
+      a lo largo de la vida del contrato alcanzó ≥4.</b> Corte de datos ("hoy" para calcular vencimientos):
+      2026-07-22 (última actividad observada en el backup).
+      <h3>Matriz de asociación</h3>
+      V de Cramér (categórica–categórica), correlación-ratio η vía ANOVA de un factor (categórica–numérica) y
+      Pearson (numérica–numérica), todas en valor absoluto para la matriz visual. Se excluyeron celdas con
+      menos de 5 observaciones por grupo.
+      <h3>Modelo multivariado</h3>
+      Regresión logística: <code>delinquent_4 ~ score(z) + fees_number(z) + trimestre(índice lineal) +
+      plan_pago + sucursal(agrupada, min. 60 obs.) + marca</code>, sobre contratos ya "maduros" (≥4 cuotas
+      vencidas observadas, n=2,412). Pseudo-R²=0.571. Sucursales con &lt;60 contratos y marcas con &lt;15 se
+      agruparon/excluyeron para evitar separación perfecta. Es un modelo exploratorio (sin validación cruzada
+      ni selección formal de variables) — para uso en política de originación se recomienda validar con un
+      conjunto de datos posterior y una definición de mora ajustada por tiempo calendario.
+    </footer>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function () {
+  const root = document.querySelector('.viz-root');
+  const cssVar = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+
+  const tooltip = document.getElementById('tooltip');
+  function showTip(evt, html) {
+    tooltip.innerHTML = html;
+    tooltip.classList.add('show');
+    moveTip(evt);
+  }
+  function moveTip(evt) {
+    const pad = 14;
+    let x = evt.clientX + pad, y = evt.clientY + pad;
+    const rect = tooltip.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) x = evt.clientX - rect.width - pad;
+    if (y + rect.height > window.innerHeight) y = evt.clientY - rect.height - pad;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+  function hideTip() { tooltip.classList.remove('show'); }
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // ================= Model bars (v2) =================
+  const modelData = [
+    {name:"EK Xpress de Paleta", n:456, pct:40.6, score:66.9},
+    {name:"EK Xpress de Rayo", n:77, pct:40.3, score:60.7},
+    {name:"Horse Rayas Locas", n:89, pct:39.3, score:65.2},
+    {name:"New Horse", n:373, pct:38.1, score:67.5},
+    {name:"Matrix 150", n:79, pct:35.4, score:69.0},
+    {name:"TX 150", n:65, pct:35.4, score:64.8},
+    {name:"RK 200", n:537, pct:33.3, score:72.5},
+    {name:"New Owen", n:269, pct:33.1, score:69.2},
+    {name:"RK 250", n:20, pct:25.0, score:76.1},
+    {name:"New Outlook II", n:41, pct:24.4, score:71.9},
+    {name:"TX 250 GS", n:24, pct:20.8, score:73.4},
+    {name:"Owen 200", n:31, pct:19.4, score:83.3},
+    {name:"EK Xpress 200", n:297, pct:17.8, score:78.4},
+    {name:"Xpress Lite", n:16, pct:12.5, score:81.6},
+  ];
+
+  function renderModelBars() {
+    const svg = document.getElementById('chart-model');
+    svg.innerHTML = '';
+    const W = 960, H = 500;
+    const marginL = 190, marginR = 60, marginT = 10, marginB = 30;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const rowH = plotH / modelData.length;
+    const barH = Math.min(20, rowH * 0.56);
+    const maxV = 50;
+    const critical = cssVar('--critical');
+
+    [0,10,20,30,40,50].forEach(v => {
+      const x = marginL + (v/maxV)*plotW;
+      svg.appendChild(el('line', {x1:x, x2:x, y1:marginT, y2:marginT+plotH, class:'grid-line'}));
+      const t = el('text', {x:x, y:marginT+plotH+18, class:'axis-label', 'text-anchor':'middle'});
+      t.textContent = v + '%';
+      svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+
+    modelData.forEach((d, i) => {
+      const y = marginT + i*rowH + (rowH-barH)/2;
+      const w = (d.pct/maxV)*plotW;
+      const g = el('g', {class:'bar-row'});
+      const label = el('text', {x:marginL-10, y:y+barH*0.72, class:'bar-cat', 'text-anchor':'end'});
+      label.textContent = d.name;
+      g.appendChild(label);
+      const rect = el('rect', {x:marginL, y:y, width:Math.max(w,2), height:barH, rx:4, ry:4, class:'bar-fill'});
+      if (d.pct >= 38) rect.style.fill = critical;
+      g.appendChild(rect);
+      const valLabel = el('text', {x:marginL+w+8, y:y+barH*0.72, class:'bar-label'});
+      valLabel.textContent = d.pct.toFixed(1) + '%';
+      g.appendChild(valLabel);
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.name}</div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Morosidad (v2): <b>${d.pct.toFixed(1)}%</b></div>
+         <div class="t-row">Score promedio comprador: <b>${d.score.toFixed(0)}</b></div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+    const axisTitle = el('text', {x:marginL+plotW/2, y:H-2, class:'axis-label', 'text-anchor':'middle'});
+    axisTitle.textContent = '% de contratos con 4+ cuotas consecutivas vencidas';
+    svg.appendChild(axisTitle);
+  }
+
+  // ================= Scatter: model score vs v2 pct =================
+  function renderScatter() {
+    const svg = document.getElementById('chart-scatter');
+    svg.innerHTML = '';
+    const W = 480, H = 380;
+    const marginL = 44, marginR = 16, marginT = 12, marginB = 40;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const xMin = 55, xMax = 90, yMin = 5, yMax = 45;
+    const fill = cssVar('--series-1');
+
+    [60,70,80,90].forEach(v => {
+      const x = marginL + ((v-xMin)/(xMax-xMin))*plotW;
+      svg.appendChild(el('line', {x1:x, x2:x, y1:marginT, y2:marginT+plotH, class:'grid-line'}));
+      const t = el('text', {x:x, y:marginT+plotH+16, class:'axis-label', 'text-anchor':'middle'});
+      t.textContent = v; svg.appendChild(t);
+    });
+    [10,20,30,40].forEach(v => {
+      const y = marginT + plotH - ((v-yMin)/(yMax-yMin))*plotH;
+      svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:y, y2:y, class:'grid-line'}));
+      const t = el('text', {x:marginL-8, y:y+4, class:'axis-label', 'text-anchor':'end'});
+      t.textContent = v+'%'; svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+    svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:marginT+plotH, y2:marginT+plotH, class:'baseline'}));
+
+    const maxN = Math.max(...modelData.map(d=>d.n));
+    modelData.forEach(d => {
+      const cx = marginL + ((d.score-xMin)/(xMax-xMin))*plotW;
+      const cy = marginT + plotH - ((d.pct-yMin)/(yMax-yMin))*plotH;
+      const r = 5 + 14*Math.sqrt(d.n/maxN);
+      const c = el('circle', {cx:cx, cy:cy, r:r, fill:fill, opacity:0.55, stroke:fill, 'stroke-width':1.5});
+      c.style.cursor = 'pointer';
+      c.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.name}</div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Score promedio: <b>${d.score.toFixed(0)}</b></div>
+         <div class="t-row">Morosidad v2: <b>${d.pct.toFixed(1)}%</b></div>`));
+      c.addEventListener('mouseleave', hideTip);
+      svg.appendChild(c);
+    });
+    const xt = el('text', {x:marginL+plotW/2, y:H-4, class:'axis-label', 'text-anchor':'middle'});
+    xt.textContent = 'Score promedio del cliente (0-100)';
+    svg.appendChild(xt);
+    const yt = el('text', {x:14, y:marginT+plotH/2, class:'axis-label', 'text-anchor':'middle', transform:`rotate(-90 14 ${marginT+plotH/2})`});
+    yt.textContent = '% morosidad v2 del modelo';
+    svg.appendChild(yt);
+  }
+
+  // ================= Ranked association bar =================
+  const rankedData = [
+    {label:"Score del cliente", val:0.728, client:true},
+    {label:"Trimestre de ingreso", val:0.240, client:false},
+    {label:"Sucursal", val:0.211, client:false},
+    {label:"Cuota mensual", val:0.169, client:false},
+    {label:"Plazo (nº cuotas)", val:0.167, client:false},
+    {label:"Modelo de moto", val:0.158, client:false},
+    {label:"Estado (residencia)", val:0.160, client:true},
+    {label:"Plan de pago", val:0.135, client:false},
+    {label:"Seguro removido", val:0.095, client:false},
+    {label:"Marca", val:0.056, client:false},
+    {label:"GPS removido", val:0.051, client:false},
+    {label:"Compra-venta", val:0.047, client:false},
+    {label:"Tiene fiador", val:0.035, client:true},
+    {label:"Precio de contado", val:0.034, client:false},
+    {label:"Ingreso declarado", val:0.023, client:true},
+    {label:"Estado civil", val:0.003, client:true},
+  ];
+
+  function renderRanked() {
+    const svg = document.getElementById('chart-ranked');
+    svg.innerHTML = '';
+    const W = 480, H = 360;
+    const marginL = 150, marginR = 40, marginT = 6, marginB = 24;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const rowH = plotH / rankedData.length;
+    const barH = Math.min(14, rowH*0.6);
+    const maxV = 0.8;
+    const client = cssVar('--critical'), other = cssVar('--series-1');
+
+    [0,0.2,0.4,0.6,0.8].forEach(v => {
+      const x = marginL + (v/maxV)*plotW;
+      svg.appendChild(el('line', {x1:x, x2:x, y1:marginT, y2:marginT+plotH, class:'grid-line'}));
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+
+    rankedData.forEach((d,i) => {
+      const y = marginT + i*rowH + (rowH-barH)/2;
+      const w = (d.val/maxV)*plotW;
+      const g = el('g', {class:'bar-row'});
+      const label = el('text', {x:marginL-8, y:y+barH*0.75, class:'bar-cat', 'text-anchor':'end', style:'font-size:11px'});
+      label.textContent = d.label;
+      g.appendChild(label);
+      const rect = el('rect', {x:marginL, y:y, width:Math.max(w,1.5), height:barH, rx:3, ry:3});
+      rect.style.fill = d.client ? client : other;
+      g.appendChild(rect);
+      const vt = el('text', {x:marginL+w+6, y:y+barH*0.75, class:'bar-label', style:'font-size:10.5px'});
+      vt.textContent = d.val.toFixed(2);
+      g.appendChild(vt);
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.label}</div><div class="t-row">Asociación con morosidad: <b>${d.val.toFixed(3)}</b></div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+  }
+
+  // ================= Payment type: raw vs adjusted =================
+  const paymentData = [
+    {label:"Semanal", n:1088, raw:39.7, adj:13.4},
+    {label:"Quincenal (15last)", n:1148, raw:29.5, adj:17.3},
+    {label:"Mensual", n:180, raw:18.9, adj:20.0},
+  ];
+
+  function renderPaired(svgId, data, opts) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+    const W = vb[2], H = vb[3];
+    const marginL = 50, marginR = 20, marginT = 14, marginB = 34;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const maxV = opts.maxV;
+    const groupW = plotW / data.length;
+    const barW = groupW * 0.28;
+    const c1 = cssVar('--series-1'), c2 = cssVar('--series-4');
+
+    [0, maxV/2, maxV].forEach(v => {
+      const y = marginT + plotH - (v/maxV)*plotH;
+      svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:y, y2:y, class:'grid-line'}));
+      const t = el('text', {x:marginL-8, y:y+4, class:'axis-label', 'text-anchor':'end'});
+      t.textContent = Math.round(v)+'%'; svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+    svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:marginT+plotH, y2:marginT+plotH, class:'baseline'}));
+
+    data.forEach((d,i) => {
+      const cx = marginL + groupW*i + groupW/2;
+      [["raw", c1, -1], ["adj", c2, 1]].forEach(([key, color, dir]) => {
+        const v = d[key];
+        const h = (v/maxV)*plotH;
+        const x = cx + dir*(barW*0.55);
+        const y = marginT + plotH - h;
+        const g = el('g', {class:'bar-row'});
+        const rect = el('rect', {x: x - (dir<0?barW:0), y:y, width:barW, height:h, rx:3, ry:3});
+        rect.style.fill = color;
+        g.appendChild(rect);
+        const vt = el('text', {x:x-(dir<0?barW/2:-barW/2), y:y-6, class:'bar-label', 'text-anchor':'middle', style:'font-size:11px'});
+        vt.textContent = v.toFixed(1)+'%';
+        g.appendChild(vt);
+        g.addEventListener('mousemove', (evt) => showTip(evt,
+          `<div class="t-title">${d.label}</div>
+           <div class="t-row">Contratos: <b>${d.n}</b></div>
+           <div class="t-row">${key==='raw'?'Tasa cruda':'Tasa ajustada por madurez'}: <b>${v.toFixed(1)}%</b></div>`));
+        g.addEventListener('mouseleave', hideTip);
+        svg.appendChild(g);
+      });
+      const lbl = el('text', {x:cx, y:marginT+plotH+20, class:'bar-cat', 'text-anchor':'middle'});
+      lbl.textContent = d.label;
+      svg.appendChild(lbl);
+    });
+  }
+
+  // ================= Quarter cohort =================
+  const quarterData = [
+    {label:"2024Q3", n:93, adj:19.6, raw:36.6, mature:true},
+    {label:"2024Q4", n:625, adj:18.8, raw:40.0, mature:true},
+    {label:"2025Q1", n:332, adj:17.6, raw:46.4, mature:true},
+    {label:"2025Q2", n:374, adj:14.7, raw:39.3, mature:true},
+    {label:"2025Q3", n:168, adj:14.7, raw:39.9, mature:true},
+    {label:"2025Q4", n:480, adj:11.6, raw:22.1, mature:false},
+    {label:"2026Q1", n:262, adj:15.0, raw:16.4, mature:false},
+    {label:"2026Q2", n:82, adj:14.3, raw:4.9, mature:false},
+  ];
+
+  function renderQuarter() {
+    const svg = document.getElementById('chart-quarter');
+    svg.innerHTML = '';
+    const W = 960, H = 320;
+    const marginL = 50, marginR = 20, marginT = 14, marginB = 34;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const maxV = 50;
+    const groupW = plotW / quarterData.length;
+    const barW = groupW * 0.4;
+    const primary = cssVar('--series-1'), muted = cssVar('--baseline');
+
+    [0,25,50].forEach(v => {
+      const y = marginT + plotH - (v/maxV)*plotH;
+      svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:y, y2:y, class:'grid-line'}));
+      const t = el('text', {x:marginL-8, y:y+4, class:'axis-label', 'text-anchor':'end'});
+      t.textContent = v+'%'; svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+    svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:marginT+plotH, y2:marginT+plotH, class:'baseline'}));
+
+    // muted raw-rate line (context) + primary adjusted bars
+    const linePts = quarterData.map((d,i) => {
+      const cx = marginL + groupW*i + groupW/2;
+      const y = marginT + plotH - (d.raw/maxV)*plotH;
+      return [cx,y];
+    });
+    const path = el('polyline', {points: linePts.map(p=>p.join(',')).join(' '), fill:'none', stroke: muted, 'stroke-width':1.5, 'stroke-dasharray':'3,3'});
+    svg.appendChild(path);
+    linePts.forEach(([cx,cy],i) => {
+      const c = el('circle', {cx:cx, cy:cy, r:3, fill: muted});
+      svg.appendChild(c);
+    });
+
+    quarterData.forEach((d,i) => {
+      const cx = marginL + groupW*i + groupW/2;
+      const h = (d.adj/maxV)*plotH;
+      const y = marginT + plotH - h;
+      const g = el('g', {class:'bar-row'});
+      const rect = el('rect', {x:cx-barW/2, y:y, width:barW, height:h, rx:4, ry:4});
+      rect.style.fill = primary;
+      rect.style.opacity = d.mature ? 1 : 0.45;
+      g.appendChild(rect);
+      const vt = el('text', {x:cx, y:y-6, class:'bar-label', 'text-anchor':'middle'});
+      vt.textContent = d.adj.toFixed(1)+'%';
+      g.appendChild(vt);
+      const lbl = el('text', {x:cx, y:marginT+plotH+20, class:'bar-cat', 'text-anchor':'middle'});
+      lbl.textContent = d.label + (d.mature ? '' : '*');
+      g.appendChild(lbl);
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.label}${d.mature?'':' (inmadura)'}</div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Tasa ajustada por madurez: <b>${d.adj.toFixed(1)}%</b></div>
+         <div class="t-row">Tasa cruda: <b>${d.raw.toFixed(1)}%</b></div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+    const note = el('text', {x:marginL, y:16, class:'axis-label'});
+    note.textContent = '* cohortes con pocas cuotas maduradas — lectura ruidosa';
+    svg.appendChild(note);
+  }
+
+  // ================= Branch (raw) =================
+  const branchData = [
+    {label:"Guarenas", n:947, pct:42.7},
+    {label:"Temblador", n:142, pct:38.7},
+    {label:"Pto Ordaz", n:99, pct:38.4},
+    {label:"Maturín", n:248, pct:37.1},
+    {label:"Guatire", n:246, pct:25.6},
+    {label:"Píritu", n:109, pct:24.8},
+    {label:"El Panita", n:246, pct:24.0},
+    {label:"Valencia", n:91, pct:23.1},
+    {label:"Tucacas", n:23, pct:21.7},
+    {label:"Tucupita", n:62, pct:16.1},
+    {label:"Caracas", n:181, pct:15.5},
+    {label:"Barcelona", n:18, pct:5.6},
+  ];
+
+  function renderVBars(svgId, data, opts) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+    const W = vb[2], H = vb[3];
+    const marginL = 46, marginR = 12, marginT = 10, marginB = opts.rotateLabels ? 62 : 30;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const maxV = opts.maxV || Math.max(...data.map(d=>d.pct)) * 1.2;
+    const barW = plotW / data.length * 0.56;
+    const gap = plotW / data.length;
+    const fill = cssVar('--series-1'), critical = cssVar('--critical');
+
+    [0, maxV/2, maxV].forEach(v => {
+      const y = marginT + plotH - (v/maxV)*plotH;
+      svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:y, y2:y, class:'grid-line'}));
+      const t = el('text', {x:marginL-8, y:y+4, class:'axis-label', 'text-anchor':'end'});
+      t.textContent = Math.round(v)+'%'; svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+    svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:marginT+plotH, y2:marginT+plotH, class:'baseline'}));
+
+    data.forEach((d,i) => {
+      const cx = marginL + gap*i + gap/2;
+      const h = (d.pct/maxV)*plotH;
+      const y = marginT + plotH - h;
+      const g = el('g', {class:'bar-row'});
+      const rect = el('rect', {x:cx-barW/2, y:y, width:barW, height:h, rx:4, ry:4, class:'bar-fill'});
+      if (opts.highlightHigh && d.pct >= opts.highlightHigh) rect.style.fill = critical;
+      g.appendChild(rect);
+      if (!opts.sparseLabels || i === 0 || i === data.length-1) {
+        const vt = el('text', {x:cx, y:y-6, class:'bar-label', 'text-anchor':'middle', style:'font-size:11px'});
+        vt.textContent = d.pct.toFixed(1)+'%';
+        g.appendChild(vt);
+      }
+      const lbl = el('text', {x:cx, y:marginT+plotH+16, class:'bar-cat', 'text-anchor': opts.rotateLabels ? 'end':'middle'});
+      lbl.textContent = d.label;
+      if (opts.rotateLabels) lbl.setAttribute('transform', `rotate(-40 ${cx} ${marginT+plotH+16})`);
+      g.appendChild(lbl);
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.label}</div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Morosidad v2: <b>${d.pct.toFixed(1)}%</b></div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+  }
+
+  // ================= Forest plot (logistic regression odds ratios) =================
+  const forestData = [
+    {label:"Score (+1 DE)", or:0.061, lo:0.049, hi:0.076, sig:true},
+    {label:"Plazo, nº cuotas (+1 DE)", or:2.089, lo:1.637, hi:2.667, sig:true},
+    {label:"Trimestre de ingreso (+1)", or:0.810, lo:0.734, hi:0.894, sig:true},
+    {label:"Plan: quincenal vs mensual", or:11.963, lo:5.830, hi:24.547, sig:true},
+    {label:"Plan: semanal vs mensual", or:11.366, lo:4.577, hi:28.223, sig:true},
+    {label:"Marca: Empire Keeway vs Empire", or:0.823, lo:0.397, hi:1.707, sig:false},
+    {label:"Sucursal: Temblador vs Caracas", or:2.288, lo:0.928, hi:5.641, sig:false},
+    {label:"Sucursal: Pto Ordaz vs Caracas", or:1.888, lo:0.709, hi:5.029, sig:false},
+    {label:"Sucursal: Guarenas vs Caracas", or:1.762, lo:0.846, hi:3.671, sig:false},
+    {label:"Sucursal: Valencia vs Caracas", or:1.514, lo:0.535, hi:4.281, sig:false},
+    {label:"Sucursal: Maturín vs Caracas", or:1.456, lo:0.623, hi:3.404, sig:false},
+    {label:"Sucursal: El Panita vs Caracas", or:1.225, lo:0.532, hi:2.820, sig:false},
+    {label:"Sucursal: Guatire vs Caracas", or:1.222, lo:0.557, hi:2.683, sig:false},
+    {label:"Sucursal: Píritu vs Caracas", or:1.113, lo:0.437, hi:2.835, sig:false},
+    {label:"Sucursal: Tucupita vs Caracas", or:0.963, lo:0.278, hi:3.333, sig:false},
+  ];
+
+  function renderForest() {
+    const svg = document.getElementById('chart-forest');
+    svg.innerHTML = '';
+    const W = 480, H = 420;
+    const marginL = 190, marginR = 20, marginT = 10, marginB = 30;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const rowH = plotH / forestData.length;
+    // log scale, OR range ~0.03 to 30
+    const xMin = Math.log(0.03), xMax = Math.log(30);
+    const xPos = (or) => marginL + ((Math.log(or)-xMin)/(xMax-xMin))*plotW;
+    const good = cssVar('--good'), critical = cssVar('--critical'), muted = cssVar('--text-muted');
+
+    [0.1, 1, 10].forEach(v => {
+      const x = xPos(v);
+      svg.appendChild(el('line', {x1:x, x2:x, y1:marginT, y2:marginT+plotH, class: v===1 ? 'baseline':'grid-line'}));
+      const t = el('text', {x:x, y:marginT+plotH+16, class:'axis-label', 'text-anchor':'middle'});
+      t.textContent = v+'×'; svg.appendChild(t);
+    });
+
+    forestData.forEach((d,i) => {
+      const y = marginT + i*rowH + rowH/2;
+      const label = el('text', {x:marginL-10, y:y+4, class:'bar-cat', 'text-anchor':'end', style:'font-size:11px'});
+      label.textContent = d.label;
+      svg.appendChild(label);
+      const x1 = xPos(Math.max(d.lo, 0.031)), x2 = xPos(Math.min(d.hi, 29));
+      const color = !d.sig ? muted : (d.or < 1 ? good : critical);
+      const g = el('g');
+      g.appendChild(el('line', {x1:x1, x2:x2, y1:y, y2:y, stroke:color, 'stroke-width':1.5}));
+      g.appendChild(el('circle', {cx:xPos(d.or), cy:y, r:4.5, fill:color}));
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.label}</div>
+         <div class="t-row">Odds ratio: <b>${d.or.toFixed(2)}×</b></div>
+         <div class="t-row">IC 95%: <b>${d.lo.toFixed(2)} – ${d.hi.toFixed(2)}</b></div>
+         <div class="t-row">${d.sig ? 'Significativo' : 'No significativo'}</div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+  }
+
+  // ================= Heatmap =================
+  const heatLabels = ["Modelo","Marca","Sucursal","Plan pago","Trimestre","Edo. civil","Estado","Compra-venta","GPS removido","Seguro removido","Fiador","Plazo","Cuota mensual","Precio contado","Score","Ingreso","Morosidad 4c","Máx. cuotas mora"];
+  const heatMatrix = [[1.0,0.944,0.229,0.202,0.294,0.131,0.187,0.128,0.135,0.158,0.076,0.158,0.284,0.769,0.189,0.111,0.158,0.183],[0.944,1.0,0.222,0.072,0.223,0.038,0.205,0.012,0.022,0.033,0.0,0.009,0.075,0.087,0.066,0.011,0.056,0.056],[0.229,0.222,1.0,0.36,0.279,0.071,0.739,0.142,0.159,0.184,0.099,0.385,0.291,0.211,0.204,0.067,0.211,0.252],[0.202,0.072,0.36,1.0,0.356,0.026,0.438,0.107,0.126,0.165,0.014,0.815,0.765,0.073,0.079,0.054,0.135,0.184],[0.294,0.223,0.279,0.356,1.0,0.147,0.313,0.189,0.231,0.317,0.075,0.043,0.148,0.19,0.239,0.108,0.24,0.261],[0.131,0.038,0.071,0.026,0.147,1.0,0.202,0.0,0.0,0.0,0.0,0.016,0.011,0.065,0.021,0.006,0.003,0.001],[0.187,0.205,0.739,0.438,0.313,0.202,1.0,0.212,0.197,0.32,0.087,0.337,0.234,0.219,0.13,0.264,0.16,0.114],[0.128,0.012,0.142,0.107,0.189,0.0,0.212,1.0,0.852,0.747,0.0,0.02,0.018,0.059,0.072,0.005,0.047,0.043],[0.135,0.022,0.159,0.126,0.231,0.0,0.197,0.852,1.0,0.732,0.0,0.023,0.022,0.05,0.078,0.005,0.051,0.043],[0.158,0.033,0.184,0.165,0.317,0.0,0.32,0.747,0.732,1.0,0.0,0.073,0.023,0.047,0.094,0.006,0.095,0.072],[0.076,0.0,0.099,0.014,0.075,0.0,0.087,0.0,0.0,0.0,1.0,0.023,0.015,0.031,0.02,0.004,0.035,0.02],[0.158,0.009,0.385,0.815,0.043,0.016,0.337,0.02,0.023,0.073,0.023,1.0,0.728,0.01,0.017,0.006,0.167,0.23],[0.284,0.075,0.291,0.765,0.148,0.011,0.234,0.018,0.022,0.023,0.015,0.728,1.0,0.391,0.008,0.014,0.169,0.2],[0.769,0.087,0.211,0.073,0.19,0.065,0.219,0.059,0.05,0.047,0.031,0.01,0.391,1.0,0.033,0.034,0.034,0.037],[0.189,0.066,0.204,0.079,0.239,0.021,0.13,0.072,0.078,0.094,0.02,0.017,0.008,0.033,1.0,0.022,0.728,0.672],[0.111,0.011,0.067,0.054,0.108,0.006,0.264,0.005,0.005,0.006,0.004,0.006,0.014,0.034,0.022,1.0,0.023,0.029],[0.158,0.056,0.211,0.135,0.24,0.003,0.16,0.047,0.051,0.095,0.035,0.167,0.169,0.034,0.728,0.023,1.0,0.662],[0.183,0.056,0.252,0.184,0.261,0.001,0.114,0.043,0.043,0.072,0.02,0.23,0.2,0.037,0.672,0.029,0.662,1.0]];
+
+  function renderHeatmap() {
+    const svg = document.getElementById('chart-heatmap');
+    svg.innerHTML = '';
+    const n = heatLabels.length;
+    const W = 900, H = 620;
+    const marginL = 140, marginT = 10, marginR = 10, marginB = 140;
+    const size = Math.min((W-marginL-marginR)/n, (H-marginT-marginB)/n);
+    const seq = ['#cde2fb','#9ec5f4','#5598e7','#2a78d6','#1c5cab','#0d366b'];
+    const colorFor = (v) => {
+      const av = Math.abs(v);
+      const idx = Math.min(seq.length-1, Math.floor(av*seq.length));
+      return seq[idx];
+    };
+
+    for (let i=0;i<n;i++) {
+      for (let j=0;j<n;j++) {
+        const x = marginL + j*size, y = marginT + i*size;
+        const v = heatMatrix[i][j];
+        const rect = el('rect', {x:x, y:y, width:size, height:size, class:'heat-cell'});
+        rect.style.fill = i===j ? cssVar('--grid') : colorFor(v);
+        rect.addEventListener('mousemove', (evt) => showTip(evt,
+          `<div class="t-title">${heatLabels[i]} × ${heatLabels[j]}</div><div class="t-row">Asociación: <b>${v.toFixed(3)}</b></div>`));
+        rect.addEventListener('mouseleave', hideTip);
+        svg.appendChild(rect);
+      }
+      const rowLabel = el('text', {x:marginL-6, y:marginT+i*size+size*0.7, class:'heat-label', 'text-anchor':'end'});
+      rowLabel.textContent = heatLabels[i];
+      svg.appendChild(rowLabel);
+      const colLabel = el('text', {x:marginL+i*size+size*0.5, y:marginT+n*size+12, class:'heat-label', 'text-anchor':'end', transform:`rotate(-60 ${marginL+i*size+size*0.5} ${marginT+n*size+12})`});
+      colLabel.textContent = heatLabels[i];
+      svg.appendChild(colLabel);
+    }
+    // legend
+    const lgY = marginT + n*size + 60;
+    seq.forEach((c,i) => {
+      const x = marginL + i*36;
+      svg.appendChild(el('rect', {x:x, y:lgY, width:30, height:12, fill:c}));
+    });
+    const lgLabelLo = el('text', {x:marginL, y:lgY+26, class:'axis-label'});
+    lgLabelLo.textContent = '0 (sin asociación)';
+    svg.appendChild(lgLabelLo);
+    const lgLabelHi = el('text', {x:marginL+seq.length*36, y:lgY+26, class:'axis-label'});
+    lgLabelHi.textContent = '1 (fuerte)';
+    svg.appendChild(lgLabelHi);
+  }
+
+  function renderAll() {
+    renderModelBars();
+    renderScatter();
+    renderRanked();
+    renderPaired('chart-payment', paymentData, {maxV: 45});
+    renderQuarter();
+    renderVBars('chart-branch', branchData, {maxV: 50, rotateLabels:true, highlightHigh:37, sparseLabels:true});
+    renderForest();
+    renderHeatmap();
+  }
+
+  renderAll();
+  window.addEventListener('resize', renderAll);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
+  document.addEventListener('mousemove', (e) => { if (tooltip.classList.contains('show')) moveTip(e); });
+})();
+</script>
+</body>
+</html>

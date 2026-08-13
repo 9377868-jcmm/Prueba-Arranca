@@ -66,7 +66,7 @@ psql -d TARGET_DB -f sql/03_build_lease_features.sql
 DATABASE_URL=postgresql:///TARGET_DB python3 scripts/04_stats.py
 ```
 
-## Resultados
+## Resultados (v1 — morosidad = evento de cobranza)
 
 - **`data/model_summary.csv`** — morosidad por modelo de moto (n≥15).
 - **`data/branch_summary.csv`** — morosidad por sucursal.
@@ -80,3 +80,42 @@ DATABASE_URL=postgresql:///TARGET_DB python3 scripts/04_stats.py
 Ver el reporte HTML para la lectura completa de hallazgos y las salvedades
 (correlación ≠ causalidad, el "efecto modelo" está en buena parte confundido
 con el score del cliente, etc).
+
+## v2 — morosidad = 4 cuotas consecutivas vencidas
+
+Segunda vuelta del análisis con una definición de morosidad basada en pagos
+reales en vez de eventos de cobranza, más segmentación trimestral, matriz de
+correlación entre todos los factores disponibles y un modelo multivariado.
+Ver **`reports/morosidad_v2_cuotas_consecutivas.html`** para la lectura
+completa (incluye el contraste explícito con los hallazgos de v1 — varias
+conclusiones de v1 no sobreviven el cambio de definición).
+
+Pipeline adicional (ejecutar después de `sql/03_build_lease_features.sql`,
+requiere las mismas variables de entorno `DATABASE_URL`; instala también
+`sqlalchemy`, `python-dateutil` y `statsmodels`):
+
+```bash
+python3 scripts/05_build_delinquency_v2.py   # reconstruye cronograma de cuotas
+                                              # vs pagos reales -> analysis.lease_features_v2
+python3 scripts/06_stats_v2.py               # matriz de asociación + resúmenes agregados
+python3 scripts/07_logit_v2.py               # regresión logística multivariada
+```
+
+`05_build_delinquency_v2.py` materializa `analysis.lease_features_v2` en la
+base de datos (nivel de contrato — score, sucursal, etc. por lease). Esa
+tabla **no se exporta a CSV ni se versiona**: solo las salidas ya agregadas
+que producen los scripts 06 y 07 se guardan en `data/`.
+
+- **`data/model_summary_v2.csv`**, **`branch_summary_v2.csv`**,
+  **`payment_summary_v2.csv`**, **`quarter_summary.csv`** — igual que en v1
+  pero con la definición de 4 cuotas consecutivas (y, para plan de pago y
+  cosecha, una tasa ajustada por madurez además de la cruda).
+- **`data/association_matrix.csv`** / **`association_pvalues.csv`** — matriz
+  completa (16 factores × 2 indicadores de morosidad): V de Cramér
+  (categórica–categórica), correlación-ratio η (categórica–numérica) o
+  Pearson (numérica–numérica), todas en valor absoluto.
+- **`data/target_associations.csv`** — la misma matriz, aplanada y ordenada
+  por fuerza de asociación con cada indicador de morosidad.
+- **`data/logit_odds_ratios.csv`** — odds ratios del modelo multivariado
+  (score, plazo, trimestre, plan de pago, sucursal, marca), con intervalo de
+  confianza al 95% y p-valor.

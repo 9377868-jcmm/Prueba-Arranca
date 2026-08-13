@@ -1,0 +1,18 @@
+,odds_ratio,ci_low,ci_high,p
+Intercept,0.035,0.012,0.101,0.0
+"C(payment_type, Treatment('monthly'))[T.15last]",11.963,5.83,24.547,0.0
+"C(payment_type, Treatment('monthly'))[T.weekly]",11.366,4.577,28.223,0.0
+"C(location_grp, Treatment('Caracas'))[T.El_Panita]",1.225,0.532,2.82,0.634
+"C(location_grp, Treatment('Caracas'))[T.Guarenas]",1.762,0.846,3.671,0.13
+"C(location_grp, Treatment('Caracas'))[T.Guatire]",1.222,0.557,2.683,0.617
+"C(location_grp, Treatment('Caracas'))[T.Maturin]",1.456,0.623,3.404,0.385
+"C(location_grp, Treatment('Caracas'))[T.Otra]",2.398,0.704,8.163,0.162
+"C(location_grp, Treatment('Caracas'))[T.Piritu]",1.113,0.437,2.835,0.823
+"C(location_grp, Treatment('Caracas'))[T.Pto_Ordaz]",1.888,0.709,5.029,0.203
+"C(location_grp, Treatment('Caracas'))[T.Temblador]",2.288,0.928,5.641,0.072
+"C(location_grp, Treatment('Caracas'))[T.Tucupita]",0.963,0.278,3.333,0.952
+"C(location_grp, Treatment('Caracas'))[T.Valencia]",1.514,0.535,4.281,0.434
+"C(brand_norm, Treatment('EMPIRE'))[T.EMPIRE KEEWAY]",0.823,0.397,1.707,0.601
+score_z,0.061,0.049,0.076,0.0
+fees_number_z,2.089,1.637,2.667,0.0
+quarter_idx,0.81,0.734,0.894,0.0
