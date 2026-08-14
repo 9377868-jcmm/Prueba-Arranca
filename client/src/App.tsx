@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { api } from './api/client';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectPage from './pages/ProjectPage';
+import SyncPage from './pages/SyncPage';
 
 export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -72,6 +73,10 @@ export default function App() {
           path="/project/:id/*"
           element={token ? <ProjectPage /> : <Navigate to="/" />}
         />
+        <Route
+          path="/sync"
+          element={token ? <SyncPage /> : <Navigate to="/" />}
+        />
       </Routes>
     </div>
   );
@@ -84,6 +89,9 @@ interface HeaderProps {
 }
 
 function Header({ user, onLogout, isLoggedIn }: HeaderProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <div className="header">
       <div className="container">
@@ -92,6 +100,32 @@ function Header({ user, onLogout, isLoggedIn }: HeaderProps) {
           <div className="nav">
             {isLoggedIn && user && (
               <>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/dashboard');
+                  }}
+                  style={{
+                    textDecoration: 'none',
+                    color: location.pathname === '/dashboard' ? '#fc6d26' : '#333',
+                  }}
+                >
+                  📚 Proyectos
+                </a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/sync');
+                  }}
+                  style={{
+                    textDecoration: 'none',
+                    color: location.pathname === '/sync' ? '#fc6d26' : '#333',
+                  }}
+                >
+                  🔄 Sincronización
+                </a>
                 <span>👤 {user.name}</span>
                 <button className="btn btn-secondary" onClick={onLogout}>
                   Salir

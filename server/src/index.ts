@@ -4,6 +4,7 @@ import session from 'express-session';
 import dotenv from 'dotenv';
 import { gitlabRoutes } from './routes/gitlab';
 import { authRoutes } from './routes/auth';
+import { webhookRoutes } from './routes/webhooks';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(session({
 
 app.use('/api/auth', authRoutes);
 app.use('/api/gitlab', gitlabRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
