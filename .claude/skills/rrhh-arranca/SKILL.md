@@ -13,12 +13,17 @@ Usa como plantilla la descripción de cargo de Coordinador(a) de Ventas, en la p
 **Organigrama y Cargos** (`3bcfc7d063608198a52ed2827c32f302`), y su guion de entrevista en la subpágina
 **Guion de Entrevista y Scorecard — Coordinador(a) de Ventas** (`3bcfc7d0636081b2bcb6eca2c54fd830`).
 
-Antes de redactar cualquier cargo, consulta `/rrhh/modelo-nomina-costo-laboral.md` y la subpágina de Notion
-**Plantilla completa — Modelo de Nómina (23 cargos)** (dentro de Organigrama y Cargos): traen nivel, régimen,
-salario base y banda salarial real de los 23 cargos ya definidos para Arranca. No inventes salario ni nivel
-para un cargo que ya está en esa plantilla — y si el usuario pide comisión o bono de cobranza, no asumas una
-tasa: hay una discrepancia sin resolver entre lo documentado (5%/3% y 1%/0.5%) y lo implementado (2.5%/1.5%
-y 0.5%/0.3%) que debe confirmarse con el usuario primero.
+Antes de redactar cualquier cargo, consulta `/rrhh/modelo-nomina-costo-laboral.md` y las subpáginas de Notion
+**Plantilla completa — Modelo de Nómina (23 cargos)** y **Decisiones aplicadas 15-ago — Nueva estructura de
+nómina** (dentro de Organigrama y Cargos): traen nivel, régimen y salario base ya decididos para los 23
+cargos de Arranca. Reglas ya resueltas — no las reabras sin que el usuario lo pida:
+- Comisión de ventas: 2.5% Operativo / 1.5% Táctico. Bono de cobranza: 0.5% Operativo / 0.3% Táctico, con
+  techo (1× el salario base de los elegibles del nivel ese mes).
+- Honorarios profesionales (sin beneficios ni comisión): solo Recursos Humanos y Contador. Todo lo demás es
+  régimen Laboral.
+- Salario base: cargos gerenciales $500/mes; todos los demás cargos $150/mes interino — sueldo base modesto
+  por diseño, comisión y bono de cobranza cargan el peso real de la compensación (instrucción explícita del
+  usuario para atraer talento competitivo).
 
 Estructura de una descripción de cargo:
 - Área · Reporta a · Tipo de contrato

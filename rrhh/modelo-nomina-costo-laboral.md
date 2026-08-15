@@ -21,17 +21,22 @@ Detalle de los 23 cargos: subpágina "Plantilla completa — Modelo de Nómina" 
 - Aportes no salariales: $107.17/trabajador/mes (cestaticket, HCM, guardería, uniformes, útiles escolares, becas, funerario).
 - IVSS 9% (riesgo mínimo), PIE 2%, FAOV 2% (sobre salario integral, sin tope), INCES 2% (trimestral, no 0.67% mensual).
 
-## Discrepancia sin resolver — no aplicar sin confirmar
+## Decisiones aplicadas (15-ago-2026) — ya no son preguntas abiertas
 
-La hoja "Notas y Criterios" del archivo documenta comisión de ventas al **5%/3%** y bono de cobranza al **1%/0.5%** — el doble de lo que usan las fórmulas reales (2.5%/1.5% y 0.5%/0.3%). Diferencia estimada: ~$81,000/año. **No usar ninguna de las dos tasas en comunicación con el equipo hasta que el usuario confirme cuál es la correcta.**
+- **Tasas de comisión/bono:** confirmadas en 2.5%/1.5% (comisión) y 0.5%/0.3% (bono de cobranza). Se corrigió el texto de "Notas y Criterios" que documentaba el doble (5%/3% y 1%/0.5%) — ya no hay discrepancia.
+- **Techo al bono de cobranza:** nuevo parámetro (Parámetros!B60) — el pool mensual no puede superar 1× el total de salarios base de los elegibles de ese nivel ese mes.
+- **Honorarios profesionales (sin beneficios/comisión):** solo Recursos Humanos y Contador. Las tres gerencias pasan a régimen Laboral.
+- **Salarios base:** cargos gerenciales → $500/mes (Laboral). Todos los demás cargos (17 restantes) → $150/mes interino (Laboral, con todos los beneficios de ley) — resuelve los 3 cargos que tenían salario base $0 (Analista OA, Monitoreo, Mercadeo).
+- **Filosofía de compensación (instrucción del usuario):** sueldo base modesto por diseño — comisión y bono de cobranza cargan el peso real de la compensación para atraer talento competitivo.
+
+Versión revisada del archivo: `Modelo_Nomina_Costo_Laboral_ARRANCA (revisado 15-ago-2026).xlsx` en Google Drive (el original no se modificó). Detalle completo: subpágina "Decisiones aplicadas 15-ago — Nueva estructura de nómina" en Organigrama y Cargos (Notion).
+
+**Pendiente:** LibreOffice no pudo recalcular el archivo completo en este entorno (colgado repetido incluso con el archivo original sin editar). Google Sheets recalcula automáticamente al abrir el archivo — confirmar ahí las cifras finales exactas de costo total devengado.
 
 ## Otras preguntas abiertas (no resueltas)
 
-- 3 cargos con salario base $0 (Analista OA, Monitoreo, Mercadeo) — confirmar si es por diseño o dato faltante.
-- 5 cargos estratégicos por debajo de la banda salarial N3 ($600–1,200): Legal, Administración, Programador, Contador, Recursos Humanos.
-- Riesgo de reclasificación laboral en las dos gerencias contratadas a honorarios ($3,000 c/u, sin incidencias).
-- Bono de cobranza sin techo: el pool se multiplica ×10 entre M1 y M12 sin que la plantilla crezca proporcionalmente.
-- 9 supuestos marcados "A VALIDAR" en la hoja Parámetros (cuota promedio por contrato, plazo promedio, eficiencia de cobranza 92%, tasa activa BCV Art. 143, HCM, guardería, seguro funerario, entre otros).
+- 5 cargos por debajo de lo que sería una banda salarial diferenciada por rol — quedaron unificados en $150 "interino", a ajustar más adelante según el usuario indicó.
+- 9 supuestos marcados "A VALIDAR" en la hoja Parámetros (cuota promedio por contrato, plazo promedio, eficiencia de cobranza 92%, tasa activa BCV Art. 143, HCM, guardería, seguro funerario, entre otros) — sin resolver todavía.
 
 ## Uso previsto
 
