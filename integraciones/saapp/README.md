@@ -22,4 +22,4 @@ Sistema operativo propio de Arranca: inventario, relación de pagos de clientes,
 - [ ] Reglas de cobranza dentro de SAAPP (ver marcha de cobranza, actividad 13 del Plan Maestro).
 
 ## Estado
-No iniciado — bloqueado por el flujo comercial v0.
+Atrasado. Según arranca_gantt.xlsx (auditado 14-ago-2026, no modificado), SAAPP es el "Módulo de ventas" de la actividad 3.1.1 — programado 20-jul→01-ago, a cargo del equipo IT/Ventas/Cobranza/Contabilidad, y sigue sin cerrar. Es el ítem más atrasado del Gantt real.

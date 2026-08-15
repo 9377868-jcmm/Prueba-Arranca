@@ -13,4 +13,4 @@ Definir y automatizar el flujo de datos entre Arranca y su(s) proveedor(es) de m
 - [ ] Esta integración alimenta la Plataforma de monitoreo de motos (actividad 10).
 
 ## Estado
-No iniciado — bloqueado por SAAPP.
+No iniciado (proveedor de motos) — bloqueado por SAAPP. Nota 14-ago: el proveedor de **GPS** (actividad 4.2, distinta de este proveedor de motos) ya fue contactado según arranca_gantt.xlsx — Kevin Oporto, proveedor Jorge González, ver Registro de Gastos.
