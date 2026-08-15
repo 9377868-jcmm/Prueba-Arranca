@@ -13,6 +13,13 @@ Usa como plantilla la descripción de cargo de Coordinador(a) de Ventas, en la p
 **Organigrama y Cargos** (`3bcfc7d063608198a52ed2827c32f302`), y su guion de entrevista en la subpágina
 **Guion de Entrevista y Scorecard — Coordinador(a) de Ventas** (`3bcfc7d0636081b2bcb6eca2c54fd830`).
 
+Antes de redactar cualquier cargo, consulta `/rrhh/modelo-nomina-costo-laboral.md` y la subpágina de Notion
+**Plantilla completa — Modelo de Nómina (23 cargos)** (dentro de Organigrama y Cargos): traen nivel, régimen,
+salario base y banda salarial real de los 23 cargos ya definidos para Arranca. No inventes salario ni nivel
+para un cargo que ya está en esa plantilla — y si el usuario pide comisión o bono de cobranza, no asumas una
+tasa: hay una discrepancia sin resolver entre lo documentado (5%/3% y 1%/0.5%) y lo implementado (2.5%/1.5%
+y 0.5%/0.3%) que debe confirmarse con el usuario primero.
+
 Estructura de una descripción de cargo:
 - Área · Reporta a · Tipo de contrato
 - Misión del cargo (1 párrafo)
