@@ -26,12 +26,26 @@ cargos de Arranca. Reglas ya resueltas — no las reabras sin que el usuario lo 
   usuario para atraer talento competitivo).
 
 Estructura de una descripción de cargo:
-- Área · Reporta a · Tipo de contrato
+- Encabezado: Cargo · Nivel (Operativo / Táctico / Estratégico / Gerencial) · Régimen (Laboral / Honorarios
+  profesionales)
+- Área · Reporta a · Tipo de contrato · Sede(s) (según la red de concesionarios)
+- Vacantes y plan de incorporación (mes M1–M12 y número de personas, según el ritmo de contratación de la
+  plantilla de 23 cargos)
 - Misión del cargo (1 párrafo)
 - Responsabilidades principales (lista)
 - KPIs del cargo
 - Perfil buscado
-- Banda salarial (marcar como pendiente si no la da el usuario)
+- Paquete de compensación:
+  - Salario base mensual (de la tabla de 23 cargos)
+  - Variable, si el nivel comisiona: % comisión de ventas y % bono de cobranza (con techo de 1× el salario
+    base de los elegibles del nivel ese mes)
+  - Incentivo trimestral: % según nivel (10% Operativo / 12% Táctico / 13% Estratégico / 15% Gerencial)
+  - Beneficios de ley si es régimen Laboral (cestaticket, HCM, aportes IVSS/PIE/FAOV/INCES, guardería, útiles
+    escolares, becas, funerario) — o "honorarios profesionales, sin beneficios de ley ni comisión" si el cargo
+    es de ese régimen
+  - Una línea que deje explícito que el paquete completo — no solo el salario base — es lo que hace competitiva
+    la oferta (alineado con la filosofía de compensación del usuario: base modesto por diseño, comisión y bono
+    cargan el peso real)
 
 Estructura de un guion de entrevista:
 - Apertura sin puntuar
@@ -42,11 +56,12 @@ Estructura de un guion de entrevista:
 ## Qué hacer
 
 1. Si el cargo no está definido aún, pregunta al usuario: misión del rol, a quién reporta, y 2-3 responsabilidades clave que ya tenga claras — no asumas datos de negocio.
-2. Redacta la descripción de cargo y el guion de entrevista siguiendo el formato de referencia.
+2. Redacta la descripción de cargo y el guion de entrevista siguiendo el formato de referencia. Resuelve el paquete de compensación cruzando el nivel y régimen del cargo contra la tabla de 23 cargos ya decidida — no lo dejes pendiente ni se lo preguntes al usuario. Si el cargo no aparece en esa tabla (rol nuevo), sí pregúntale al usuario nivel y régimen antes de calcular el paquete.
 3. Crea la página como subpágina de **Organigrama y Cargos** en Notion.
 4. Registra el nuevo cargo como fila en el Plan Maestro (`collection://82912ad3-d4ed-461a-88b8-678db9ba1503`) si corresponde a una actividad de contratación nueva, o actualiza la actividad existente si ya está creada.
 5. Si se pide un anuncio de vacante, deriva uno corto (para portal de empleo o redes) a partir de la descripción de cargo ya redactada — no la reescribas desde cero.
 
 ## No hacer
 
-- No inventes banda salarial ni KPIs sin base — márcalos como "pendiente de definir por la Gerencia" si el usuario no los da.
+- No inventes KPIs ni responsabilidades sin base — márcalos como "pendiente de definir por la Gerencia" si el usuario no las da.
+- No dejes el paquete de compensación como "pendiente" para ninguno de los 23 cargos ya definidos — se resuelve con nivel+régimen. Solo pregúntale al usuario si es un cargo fuera de esa tabla.
