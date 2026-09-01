@@ -119,3 +119,51 @@ que producen los scripts 06 y 07 se guardan en `data/`.
 - **`data/logit_odds_ratios.csv`** — odds ratios del modelo multivariado
   (score, plazo, trimestre, plan de pago, sucursal, marca), con intervalo de
   confianza al 95% y p-valor.
+
+## v3 — riesgo de siniestralidad: ¿póliza o fondo propio?
+
+Tercera línea de análisis, independiente de la morosidad: frecuencia y
+severidad de siniestros de flota (robo, hurto, choque, daño total) y una
+simulación Monte Carlo para decidir entre contratar la póliza cotizada
+($100/moto/año, de los cuales $19 son RCV y quedan fuera del alcance) o
+mantener un fondo propio. Ver
+**`reports/analisis_riesgo_seguro_vs_fondo.html`** para la lectura completa
+— incluye por qué no se reporta una tasa de robo/hurto/choque por separado
+(el sistema de origen no tiene ese campo; los eventos así tipificados en
+texto libre son demasiado pocos para ser estimables) y qué tan sensible es
+la recomendación a los supuestos usados.
+
+Pipeline adicional (mismas variables de entorno; no agrega dependencias
+nuevas):
+
+```bash
+python3 scripts/09_build_loss_events.py    # clasifica eventos de siniestro por
+                                            # confianza, exposición en moto-años
+                                            # -> analysis.loss_events / lease_exposure
+python3 scripts/10_risk_simulation.py      # Monte Carlo: frecuencia x severidad,
+                                            # percentiles de pérdida, escenarios de estrés
+python3 scripts/11_generate_risk_report.py # genera el reporte HTML desde los CSV
+```
+
+`09_build_loss_events.py` materializa `analysis.lease_exposure` y
+`analysis.loss_events` en la base de datos (nivel de contrato/evento). Esas
+tablas **no se exportan ni se versionan**: solo los agregados de `data/` se
+guardan.
+
+- **`data/risk_summary.csv`** — cifras generales (exposición, eventos,
+  precio promedio, severidad).
+- **`data/risk_by_branch.csv`** / **`risk_by_model.csv`** — frecuencia de
+  siniestros por sede y por modelo (moto-años ≥ 5).
+- **`data/risk_insured_vs_not.csv`** — frecuencia en contratos con y sin
+  póliza (con la salvedad de que el seguro se asignó por sede, no al azar).
+- **`data/event_type_summary.csv`** — conteo de eventos por tipo y nivel de
+  confianza (alta: estatus explícito de siniestro; baja: FISCALIA; muy baja:
+  menciones de texto libre).
+- **`data/loss_severity_sample.csv`** — las 5 pérdidas económicas reales
+  (precio original − precio de reventa) que se pudieron cruzar con motos
+  recuperadas.
+- **`data/simulation_summary.csv`** / **`stress_scenarios.csv`** /
+  **`fund_sizing_curve.csv`** — salida de la simulación Monte Carlo: pérdida
+  anual esperada y por percentil, sensibilidad a la frecuencia y a incluir
+  FISCALIA como siniestro, y la curva de tamaño de fondo vs. probabilidad de
+  que no alcance en un año dado.

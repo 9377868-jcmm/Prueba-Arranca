@@ -1,0 +1,409 @@
+<title>Seguro vs. fondo propio — riesgo de flota</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --gridline: #e1e0d9; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --series-2: #eb6834;
+    --good: #0ca30c; --critical: #d03b3b; --warning: #fab219;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --gridline: #2c2c2a; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926;
+      --good: #0ca30c; --critical: #e66767; --warning: #fab219;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19; --page: #0d0d0d;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --gridline: #2c2c2a; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926;
+    --good: #0ca30c; --critical: #e66767; --warning: #fab219;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--page); color: var(--text-primary); font-family: system-ui,-apple-system,"Segoe UI",sans-serif;
+          margin: 0; padding: 0 0 60px; line-height: 1.5; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 1.7rem; margin: 0 0 6px; }
+  h2 { font-size: 1.25rem; margin: 44px 0 4px; border-top: 1px solid var(--border); padding-top: 28px; }
+  h3 { font-size: 1rem; margin: 20px 0 8px; color: var(--text-secondary); }
+  .subtitle { color: var(--text-secondary); margin: 0 0 28px; font-size: 0.95rem; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 14px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px; margin: 16px 0; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .tile .num { font-size: 1.6rem; font-weight: 600; }
+  .tile .lbl { color: var(--text-secondary); font-size: 0.82rem; margin-top: 2px; }
+  .tile.good .num { color: var(--good); }
+  .tile.crit .num { color: var(--critical); }
+  .chart-svg { width: 100%; height: auto; }
+  .bar-label { fill: var(--text-secondary); font-size: 12px; }
+  .bar-value { fill: var(--text-primary); font-size: 12px; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .axis-title { fill: var(--text-secondary); font-size: 12px; }
+  .premium-label { fill: var(--critical); font-size: 11px; font-weight: 600; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 10px 0; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge.good { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+  .badge.warn { background: color-mix(in srgb, var(--warning) 22%, transparent); color: #8a6100; }
+  .badge.crit { background: color-mix(in srgb, var(--critical) 16%, transparent); color: var(--critical); }
+  .caveat { font-size: 0.85rem; color: var(--text-secondary); background: color-mix(in srgb, var(--warning) 10%, var(--surface-1));
+             border-left: 3px solid var(--warning); padding: 10px 14px; border-radius: 4px; margin: 12px 0; }
+  .answer { font-size: 1.05rem; font-weight: 600; margin: 6px 0 10px; }
+  ul { margin: 6px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
+  .toc a { color: var(--text-secondary); text-decoration: none; }
+  .toc a:hover { color: var(--text-primary); text-decoration: underline; }
+  footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; }
+</style>
+<div class="wrap">
+  <h1>¿Póliza de seguro o fondo propio contra pérdida total?</h1>
+  <p class="subtitle">Frecuencia y severidad de siniestros (robo, hurto, choque, daño total) sobre la flota de motos en arrendamiento, y simulación de capital necesario para autoasegurar el riesgo vs. contratar la póliza cotizada ($100/moto/año, de los cuales $19 son RCV y no forman parte de este análisis).</p>
+
+  <div class="toc">
+    <a href="#resumen">Resumen ejecutivo</a>
+    <a href="#datos">Qué dice realmente la data</a>
+    <a href="#frecuencia">Frecuencia por sede y modelo</a>
+    <a href="#asegurados">Asegurados vs. no asegurados</a>
+    <a href="#simulacion">Simulación: fondo vs. póliza</a>
+    <a href="#recomendacion">Recomendación</a>
+    <a href="#limitaciones">Limitaciones</a>
+  </div>
+
+  <h2 id="resumen">Resumen ejecutivo</h2>
+  <div class="grid">
+    <div class="tile"><div class="num">2,901</div><div class="lbl">contratos de moto analizados</div></div>
+    <div class="tile"><div class="num">2,373</div><div class="lbl">moto-años de exposición observados</div></div>
+    <div class="tile"><div class="num">1.73</div><div class="lbl">siniestros confirmados / 100 moto-años</div></div>
+    <div class="tile"><div class="num">$83,754</div><div class="lbl">costo anual de la póliza (flota activa, 1034 motos)</div></div>
+    <div class="tile good"><div class="num">$37,667</div><div class="lbl">pérdida anual esperada (simulada)</div></div>
+    <div class="tile good"><div class="num">$60,124</div><div class="lbl">pérdida anual en el peor 1% de los años (p99)</div></div>
+  </div>
+  <p class="answer">Con la frecuencia y severidad observadas, un fondo propio de ~$60,000–65,000 cubre el 99% de los años posibles — muy por debajo de los $83,754/año que cuesta la póliza sobre la flota activa.</p>
+  <p>Esa brecha se sostiene incluso en el escenario pesimista de frecuencia (límite superior del intervalo de confianza al 95%). Solo se estrecha si se asume que los 39 casos <code>FISCALIA</code> —hoy sin clasificar como siniestro— son también pérdidas no cubiertas; ver <a href="#simulacion">sección de simulación</a>.</p>
+
+  <h2 id="datos">Qué dice realmente la data</h2>
+  <p>El sistema de origen no tiene un campo de "tipo de siniestro". Robo, hurto y choque solo aparecen como texto libre en observaciones, y con muy pocas menciones literales:</p>
+  <table>
+    <tr><th>Fuente</th><th class="num">Registros</th><th>Confianza</th></tr>
+    <tr><td>Estatus <code>SINISTER</code> / <code>DAMAGED</code> / <code>INDEMNIFIED</code> (status_records)</td><td class="num">41</td><td><span class="badge good">alta</span></td></tr>
+    <tr><td>Estatus <code>FISCALIA</code> (denuncia legal, no siempre siniestro)</td><td class="num">39</td><td><span class="badge warn">baja</span></td></tr>
+    <tr><td>Menciones de texto libre (robo/hurto/choque/siniestro) en observaciones</td><td class="num">66</td><td><span class="badge crit">muy baja</span></td></tr>
+    <tr><td>Menciones literales de "robo" en todo el dataset</td><td class="num">3</td><td><span class="badge crit">no estimable</span></td></tr>
+    <tr><td>Menciones literales de "hurto"</td><td class="num">1</td><td><span class="badge crit">no estimable</span></td></tr>
+  </table>
+  <div class="caveat"><strong>Por eso este análisis no reporta una tasa de robo, otra de hurto y otra de choque por separado</strong> — pedírselo a esta data produciría un número inventado. Sí se puede medir con confianza razonable la frecuencia y severidad de <em>siniestros de flota en general</em> (los 41 eventos de alta confianza: 38 SINISTER, 2 DAMAGED, 1 INDEMNIFIED), que es lo que informa la simulación de abajo.</div>
+  <p>Severidad: de esos 41 eventos, 5 se pudieron cruzar con la tabla de motos recuperadas (venta tras siniestro), con una pérdida real de <strong>$1,292, $2,112, $1,554, $1,406, $2,806</strong> — entre 68% y 100% del valor original de la moto. Los 36 restantes nunca aparecen en esa tabla, consistente con robo/hurto sin recuperación: se modelan como pérdida total (100% del precio de esa moto), un supuesto documentado, no un hecho medido.</p>
+
+  <h2 id="frecuencia">Frecuencia de siniestros por sede y modelo</h2>
+  <p>Solo se muestran sedes/modelos con exposición mínima (≥5 moto-años). Con 0–18 eventos por sede, los números bajos no son un ranking preciso — pase el cursor para ver el conteo y la exposición detrás de cada barra.</p>
+  <h3>Por sede</h3>
+  <svg viewBox="0 0 920 416" class="chart-svg" role="img" aria-label="Frecuencia de siniestros por sede">
+      
+        <g class="bar-row">
+          <title>Pto_Ordaz: 5.04 / 100 moto-años (n=4, exposición 79 moto-años)</title>
+          <text x="182" y="21" text-anchor="end" class="bar-label">Pto_Ordaz</text>
+          <rect x="190" y="6" width="487.0" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="684.9565217391305" y="21" class="bar-value">5.04 / 100 moto-años  (n=4)</text>
+        </g>
+        <g class="bar-row">
+          <title>Maturin: 3.72 / 100 moto-años (n=10, exposición 269 moto-años)</title>
+          <text x="182" y="51" text-anchor="end" class="bar-label">Maturin</text>
+          <rect x="190" y="36" width="359.4" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="557.4202898550725" y="51" class="bar-value">3.72 / 100 moto-años  (n=10)</text>
+        </g>
+        <g class="bar-row">
+          <title>Guarenas: 1.67 / 100 moto-años (n=18, exposición 1077 moto-años)</title>
+          <text x="182" y="81" text-anchor="end" class="bar-label">Guarenas</text>
+          <rect x="190" y="66" width="161.4" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="359.3526570048309" y="81" class="bar-value">1.67 / 100 moto-años  (n=18)</text>
+        </g>
+        <g class="bar-row">
+          <title>Tucupita: 1.19 / 100 moto-años (n=1, exposición 84 moto-años)</title>
+          <text x="182" y="111" text-anchor="end" class="bar-label">Tucupita</text>
+          <rect x="190" y="96" width="115.0" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="312.97584541062804" y="111" class="bar-value">1.19 / 100 moto-años  (n=1)</text>
+        </g>
+        <g class="bar-row">
+          <title>Piritu: 0.90 / 100 moto-años (n=1, exposición 111 moto-años)</title>
+          <text x="182" y="141" text-anchor="end" class="bar-label">Piritu</text>
+          <rect x="190" y="126" width="87.0" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="284.95652173913044" y="141" class="bar-value">0.90 / 100 moto-años  (n=1)</text>
+        </g>
+        <g class="bar-row">
+          <title>El_Panita: 0.83 / 100 moto-años (n=2, exposición 241 moto-años)</title>
+          <text x="182" y="171" text-anchor="end" class="bar-label">El_Panita</text>
+          <rect x="190" y="156" width="80.2" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="278.19323671497585" y="171" class="bar-value">0.83 / 100 moto-años  (n=2)</text>
+        </g>
+        <g class="bar-row">
+          <title>Guatire: 0.61 / 100 moto-años (n=1, exposición 163 moto-años)</title>
+          <text x="182" y="201" text-anchor="end" class="bar-label">Guatire</text>
+          <rect x="190" y="186" width="58.9" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="256.93719806763283" y="201" class="bar-value">0.61 / 100 moto-años  (n=1)</text>
+        </g>
+        <g class="bar-row">
+          <title>Caracas: 0.00 / 100 moto-años (n=0, exposición 89 moto-años)</title>
+          <text x="182" y="231" text-anchor="end" class="bar-label">Caracas</text>
+          <rect x="190" y="216" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="231" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>Barcelona: 0.00 / 100 moto-años (n=0, exposición 6 moto-años)</title>
+          <text x="182" y="261" text-anchor="end" class="bar-label">Barcelona</text>
+          <rect x="190" y="246" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="261" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>Oficina Principal (Chacao): 0.00 / 100 moto-años (n=0, exposición 7 moto-años)</title>
+          <text x="182" y="291" text-anchor="end" class="bar-label">Oficina Principal (Chacao)</text>
+          <rect x="190" y="276" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="291" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>Temblador: 0.00 / 100 moto-años (n=0, exposición 169 moto-años)</title>
+          <text x="182" y="321" text-anchor="end" class="bar-label">Temblador</text>
+          <rect x="190" y="306" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="321" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>Tucacas: 0.00 / 100 moto-años (n=0, exposición 10 moto-años)</title>
+          <text x="182" y="351" text-anchor="end" class="bar-label">Tucacas</text>
+          <rect x="190" y="336" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="351" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>Valencia: 0.00 / 100 moto-años (n=0, exposición 46 moto-años)</title>
+          <text x="182" y="381" text-anchor="end" class="bar-label">Valencia</text>
+          <rect x="190" y="366" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="381" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+    </svg>
+  <p class="caveat">Pto_Ordaz y Maturín destacan (5.04 y 3.72/100 moto-años), pero con 4 y 10 eventos respectivamente — la incertidumbre estadística es amplia. Guarenas es la única sede con volumen suficiente (18 eventos, 1,077 moto-años) para que su tasa (1.67) sea razonablemente estable.</p>
+  <h3>Por modelo</h3>
+  <svg viewBox="0 0 920 506" class="chart-svg" role="img" aria-label="Frecuencia de siniestros por modelo">
+      
+        <g class="bar-row">
+          <title>EK XPRESS DE RAYO: 9.26 / 100 moto-años (n=7, exposición 76 moto-años)</title>
+          <text x="182" y="21" text-anchor="end" class="bar-label">EK XPRESS DE RAYO</text>
+          <rect x="190" y="6" width="487.0" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="684.9565217391305" y="21" class="bar-value">9.26 / 100 moto-años  (n=7)</text>
+        </g>
+        <g class="bar-row">
+          <title>HORSE RAYAS LOCAS: 2.02 / 100 moto-años (n=2, exposición 99 moto-años)</title>
+          <text x="182" y="51" text-anchor="end" class="bar-label">HORSE RAYAS LOCAS</text>
+          <rect x="190" y="36" width="106.2" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="304.2259367076721" y="51" class="bar-value">2.02 / 100 moto-años  (n=2)</text>
+        </g>
+        <g class="bar-row">
+          <title>NEW OWEN: 1.91 / 100 moto-años (n=6, exposición 314 moto-años)</title>
+          <text x="182" y="81" text-anchor="end" class="bar-label">NEW OWEN</text>
+          <rect x="190" y="66" width="100.4" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="298.44135599586815" y="81" class="bar-value">1.91 / 100 moto-años  (n=6)</text>
+        </g>
+        <g class="bar-row">
+          <title>EK XPRESS DE PALETA: 1.86 / 100 moto-años (n=10, exposición 539 moto-años)</title>
+          <text x="182" y="111" text-anchor="end" class="bar-label">EK XPRESS DE PALETA</text>
+          <rect x="190" y="96" width="97.8" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="295.8120011268664" y="111" class="bar-value">1.86 / 100 moto-años  (n=10)</text>
+        </g>
+        <g class="bar-row">
+          <title>NEW HORSE: 1.26 / 100 moto-años (n=5, exposición 398 moto-años)</title>
+          <text x="182" y="141" text-anchor="end" class="bar-label">NEW HORSE</text>
+          <rect x="190" y="126" width="66.3" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="264.259742698845" y="141" class="bar-value">1.26 / 100 moto-años  (n=5)</text>
+        </g>
+        <g class="bar-row">
+          <title>MATRIX 150: 1.21 / 100 moto-años (n=1, exposición 83 moto-años)</title>
+          <text x="182" y="171" text-anchor="end" class="bar-label">MATRIX 150</text>
+          <rect x="190" y="156" width="63.6" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="261.6303878298432" y="171" class="bar-value">1.21 / 100 moto-años  (n=1)</text>
+        </g>
+        <g class="bar-row">
+          <title>RK 200: 1.16 / 100 moto-años (n=6, exposición 517 moto-años)</title>
+          <text x="182" y="201" text-anchor="end" class="bar-label">RK 200</text>
+          <rect x="190" y="186" width="61.0" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="259.00103296084137" y="201" class="bar-value">1.16 / 100 moto-años  (n=6)</text>
+        </g>
+        <g class="bar-row">
+          <title>EK XPRESS 200: 0.00 / 100 moto-años (n=0, exposición 152 moto-años)</title>
+          <text x="182" y="231" text-anchor="end" class="bar-label">EK XPRESS 200</text>
+          <rect x="190" y="216" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="231" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>EK Express Paleta: 0.00 / 100 moto-años (n=0, exposición 5 moto-años)</title>
+          <text x="182" y="261" text-anchor="end" class="bar-label">EK Express Paleta</text>
+          <rect x="190" y="246" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="261" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>ATLAS: 0.00 / 100 moto-años (n=0, exposición 6 moto-años)</title>
+          <text x="182" y="291" text-anchor="end" class="bar-label">ATLAS</text>
+          <rect x="190" y="276" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="291" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>NEW OUTLOOK II: 0.00 / 100 moto-años (n=0, exposición 37 moto-años)</title>
+          <text x="182" y="321" text-anchor="end" class="bar-label">NEW OUTLOOK II</text>
+          <rect x="190" y="306" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="321" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>OWEN 200: 0.00 / 100 moto-años (n=0, exposición 24 moto-años)</title>
+          <text x="182" y="351" text-anchor="end" class="bar-label">OWEN 200</text>
+          <rect x="190" y="336" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="351" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>RK 250: 0.00 / 100 moto-años (n=0, exposición 16 moto-años)</title>
+          <text x="182" y="381" text-anchor="end" class="bar-label">RK 250</text>
+          <rect x="190" y="366" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="381" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>THUNDER: 0.00 / 100 moto-años (n=0, exposición 6 moto-años)</title>
+          <text x="182" y="411" text-anchor="end" class="bar-label">THUNDER</text>
+          <rect x="190" y="396" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="411" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>TX 150: 0.00 / 100 moto-años (n=0, exposición 64 moto-años)</title>
+          <text x="182" y="441" text-anchor="end" class="bar-label">TX 150</text>
+          <rect x="190" y="426" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="441" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+        <g class="bar-row">
+          <title>TX 250 GS: 0.00 / 100 moto-años (n=0, exposición 11 moto-años)</title>
+          <text x="182" y="471" text-anchor="end" class="bar-label">TX 250 GS</text>
+          <rect x="190" y="456" width="1.5" height="18" rx="3" fill="var(--series-1)"/>
+          <text x="199.5" y="471" class="bar-value">0.00 / 100 moto-años  (n=0)</text>
+        </g>
+    </svg>
+  <p class="caveat">EK XPRESS DE RAYO (9.26/100 moto-años) es un valor atípico basado en 7 eventos sobre solo 76 moto-años de exposición — la muestra es demasiado chica para tratarlo como una diferencia real de producto y no ruido. RK 200, NEW HORSE y EK XPRESS DE PALETA tienen exposición suficiente (400–540 moto-años) para que sus tasas (1.16–1.86) sean más confiables.</p>
+
+  <h2 id="asegurados">Asegurados vs. no asegurados</h2>
+  <svg viewBox="0 0 920 86" class="chart-svg" role="img" aria-label="Asegurados vs no asegurados">
+      
+        <g class="bar-row">
+          <title>No asegurados: 1.07 / 100 moto-años (n=15, exposición 1406 moto-años)</title>
+          <text x="182" y="21" text-anchor="end" class="bar-label">No asegurados</text>
+          <rect x="190" y="6" width="229.5" height="18" rx="3" fill="var(--series-2)"/>
+          <text x="427.53457192108795" y="21" class="bar-value">1.07 / 100 moto-años  (n=15)</text>
+        </g>
+        <g class="bar-row">
+          <title>Asegurados: 2.27 / 100 moto-años (n=22, exposición 968 moto-años)</title>
+          <text x="182" y="51" text-anchor="end" class="bar-label">Asegurados</text>
+          <rect x="190" y="36" width="487.0" height="18" rx="3" fill="var(--series-2)"/>
+          <text x="684.9565217391305" y="51" class="bar-value">2.27 / 100 moto-años  (n=22)</text>
+        </g>
+    </svg>
+  <p>Los contratos con póliza muestran <strong>más</strong> eventos por moto-año, no menos (2.27 vs 1.07). Esto <strong>no</strong> significa que asegurar cause más siniestros — el seguro no es una herramienta de prevención, es transferencia de riesgo tras el hecho. La causa real: la aseguradora (Seguros Caracas) se contrató por sede, y las sedes con seguro son justamente las de mayor riesgo (Maturín 43% asegurado, Guarenas 41%, vs. Caracas y Valencia 0%). Al comparar <em>dentro</em> de la misma sede (Guarenas: 1.89 asegurado vs 1.46 no asegurado; Maturín: 5.42 vs 1.65) el patrón se mantiene, así que no es solo un artefacto de sede — pero con tan pocos eventos por celda, no alcanza para separar selección de riesgo real de reporting bias (un siniestro asegurado tiene un proceso de reclamo que genera el registro <code>SINISTER</code>; uno no asegurado puede resolverse informalmente sin dejar ese rastro).</p>
+
+  <h2 id="simulacion">Simulación: ¿fondo propio o póliza?</h2>
+  <p>Se simularon 50,000 años de la flota activa (1034 motos) con la frecuencia y severidad observadas (Monte Carlo, eventos ~ Poisson, severidad remuestreada de los 41 casos reales). El resultado es la distribución completa de la pérdida anual — no solo el promedio, que es lo que importa para dimensionar un fondo.</p>
+  <h3>Percentiles de pérdida anual simulada vs. costo de la póliza</h3>
+  <svg viewBox="0 0 860 274" class="chart-svg" role="img" aria-label="Escalera de percentiles de pérdida anual simulada vs costo de póliza">
+      
+        <g class="bar-row">
+          <title>Esperado (media): $37,667 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="22" text-anchor="end" class="bar-label">Esperado (media)</text>
+          <rect x="210" y="6" width="208.8" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="426.80495259927886" y="22" class="bar-value">$37,667</text>
+        </g>
+        <g class="bar-row">
+          <title>p50 (mediana): $37,331 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="56" text-anchor="end" class="bar-label">p50 (mediana)</text>
+          <rect x="210" y="40" width="206.9" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="424.94235499200033" y="56" class="bar-value">$37,331</text>
+        </g>
+        <g class="bar-row">
+          <title>p75: $43,550 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="90" text-anchor="end" class="bar-label">p75</text>
+          <rect x="210" y="74" width="241.4" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="459.4170410624311" y="90" class="bar-value">$43,550</text>
+        </g>
+        <g class="bar-row">
+          <title>p90: $49,482 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="124" text-anchor="end" class="bar-label">p90</text>
+          <rect x="210" y="108" width="274.3" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="492.30075834331154" y="124" class="bar-value">$49,482</text>
+        </g>
+        <g class="bar-row">
+          <title>p95: $53,202 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="158" text-anchor="end" class="bar-label">p95</text>
+          <rect x="210" y="142" width="294.9" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="512.9223747096087" y="158" class="bar-value">$53,202</text>
+        </g>
+        <g class="bar-row">
+          <title>p99: $60,124 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="192" text-anchor="end" class="bar-label">p99</text>
+          <rect x="210" y="176" width="333.3" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="551.2941027976489" y="192" class="bar-value">$60,124</text>
+        </g>
+        <g class="bar-row">
+          <title>p99.5 (peor 1 en 200 años): $62,904 en pérdidas simuladas para la flota activa en un año</title>
+          <text x="202" y="226" text-anchor="end" class="bar-label">p99.5 (peor 1 en 200 años)</text>
+          <rect x="210" y="210" width="348.7" height="20" rx="3" fill="var(--series-1)"/>
+          <text x="566.7048806197743" y="226" class="bar-value">$62,904</text>
+        </g>
+      
+      <line x1="674.3" y1="0" x2="674.3" y2="242" stroke="var(--critical)" stroke-width="2" stroke-dasharray="5,4"/>
+      <text x="674.3" y="256" text-anchor="middle" class="premium-label">Costo de la póliza: $83,754/año</text>
+    
+    </svg>
+  <p>Incluso el percentil 99.5 (el peor año en 200) queda en <strong>$62,904</strong>, un 25% por debajo del costo anual de la póliza ($83,754). La probabilidad de que la pérdida real de un año supere lo que costaría la póliza es <strong>0.00%</strong> bajo la estimación central.</p>
+
+  <h3>¿Qué tan frágil es esta conclusión? — escenarios de estrés</h3>
+  <table>
+    <tr><th>Escenario</th><th class="num">Tasa /100 moto-años</th><th class="num">Eventos/año esp.</th><th class="num">Pérdida esperada</th><th class="num">p95</th><th class="num">p99</th><th class="num">P(pérdida &gt; póliza)</th></tr>
+    <tr><td>Estimación central</td><td class='num'>1.73</td><td class='num'>17.9</td><td class='num'>$37,617</td><td class='num'>$53,008</td><td class='num'>$60,330</td><td class='num'>0.00%</td></tr><tr><td>Límite superior IC95% frecuencia</td><td class='num'>2.34</td><td class='num'>24.2</td><td class='num'>$51,063</td><td class='num'>$69,042</td><td class='num'>$77,282</td><td class='num'>0.23%</td></tr><tr><td>Estrés: FISCALIA también son siniestros</td><td class='num'>3.37</td><td class='num'>34.9</td><td class='num'>$70,800</td><td class='num'>$91,540</td><td class='num'>$100,832</td><td class='num'>14.66%</td></tr>
+  </table>
+  <p>Solo en el escenario más pesimista —tratar los 39 casos <code>FISCALIA</code> como siniestros reales, algo que la data no confirma— la probabilidad de que un año sea más caro que la póliza sube a 14.7%. Incluso ahí, en 85 de cada 100 años el fondo propio sigue siendo más barato.</p>
+
+  <h3>Tamaño del fondo vs. probabilidad de que no alcance en un año dado</h3>
+  <svg viewBox="0 0 640 220" class="chart-svg" role="img" aria-label="Probabilidad de que la pérdida anual supere el tamaño del fondo">
+      <line x1="55" y1="186.0" x2="620" y2="186.0" class="gridline"/><text x="47" y="190.0" text-anchor="end" class="axis-label">0%</text><line x1="55" y1="143.0" x2="620" y2="143.0" class="gridline"/><text x="47" y="147.0" text-anchor="end" class="axis-label">25%</text><line x1="55" y1="100.0" x2="620" y2="100.0" class="gridline"/><text x="47" y="104.0" text-anchor="end" class="axis-label">50%</text><line x1="55" y1="57.0" x2="620" y2="57.0" class="gridline"/><text x="47" y="61.0" text-anchor="end" class="axis-label">75%</text><line x1="55" y1="14.0" x2="620" y2="14.0" class="gridline"/><text x="47" y="18.0" text-anchor="end" class="axis-label">100%</text>
+      <path d="M 55.0,14.0 L 78.5,14.0 L 102.1,14.0 L 125.6,14.0 L 149.2,14.0 L 172.7,14.0 L 196.2,15.7 L 219.8,19.2 L 243.3,27.8 L 266.9,39.8 L 290.4,57.0 L 314.0,79.4 L 337.5,103.4 L 361.0,125.8 L 384.6,146.4 L 408.1,160.2 L 431.7,170.5 L 455.2,177.4 L 478.7,182.6 L 502.3,184.3 L 525.8,186.0 L 549.4,186.0 L 572.9,186.0 L 596.5,186.0 L 620.0,186.0 L 620.0,186.0 L 55.0,186.0 Z" fill="var(--series-1)" opacity="0.15"/>
+      <path d="M 55.0,14.0 L 78.5,14.0 L 102.1,14.0 L 125.6,14.0 L 149.2,14.0 L 172.7,14.0 L 196.2,15.7 L 219.8,19.2 L 243.3,27.8 L 266.9,39.8 L 290.4,57.0 L 314.0,79.4 L 337.5,103.4 L 361.0,125.8 L 384.6,146.4 L 408.1,160.2 L 431.7,170.5 L 455.2,177.4 L 478.7,182.6 L 502.3,184.3 L 525.8,186.0 L 549.4,186.0 L 572.9,186.0 L 596.5,186.0 L 620.0,186.0" fill="none" stroke="var(--series-1)" stroke-width="2.5"/>
+      <line x1="681.9" y1="14" x2="681.9" y2="186" stroke="var(--critical)" stroke-width="2" stroke-dasharray="5,4"/>
+      <text x="681.9" y="12" text-anchor="middle" class="premium-label">póliza: $83,754</text>
+      <text x="55.0" y="212" text-anchor="middle" class="axis-label">$0k</text><text x="168.0" y="212" text-anchor="middle" class="axis-label">$15k</text><text x="281.0" y="212" text-anchor="middle" class="axis-label">$30k</text><text x="394.0" y="212" text-anchor="middle" class="axis-label">$45k</text><text x="507.0" y="212" text-anchor="middle" class="axis-label">$60k</text><text x="620.0" y="212" text-anchor="middle" class="axis-label">$75k</text>
+      <text x="337.5" y="219" text-anchor="middle" class="axis-title" dy="10">Tamaño del fondo de reserva</text>
+    </svg>
+  <p>Un fondo de <strong>$53,202</strong> (percentil 95) deja sin cubrir 1 de cada 20 años; uno de <strong>$60,124</strong> (percentil 99) deja sin cubrir 1 de cada 100. Ambos son menores al costo anual de la póliza — es decir, incluso financiando el fondo completo desde cero en el primer año, ya se ahorra frente a la prima.</p>
+
+  <h2 id="recomendacion">Recomendación</h2>
+  <div class="card">
+    <p class="answer">Con la información disponible, el fondo propio domina financieramente a la póliza de $100/moto (menos $19 de RCV) para el riesgo de pérdida total sobre la flota actual.</p>
+    <ul>
+      <li><strong>Prima de indiferencia:</strong> $36.43/moto/año — el punto en que da lo mismo asegurar o no. La prima real ($81) más que <strong>duplica</strong> ese valor.</li>
+      <li><strong>Capital inicial requerido:</strong> $60,124 cubre el 99% de los años; no exige inmovilizar más que eso incluso en el arranque del fondo.</li>
+      <li><strong>La decisión es sensible a un solo supuesto:</strong> si se decide investigar y confirmar que una parte relevante de los 39 <code>FISCALIA</code> son siniestros no reportados como tales, la ventaja del fondo se reduce (aunque no desaparece).</li>
+      <li><strong>Recomendación operativa:</strong> antes de cancelar la póliza, auditar una muestra de los 39 casos <code>FISCALIA</code> para confirmar si son siniestro, fraude interno o disputa de cobranza — esa clasificación, hoy ausente del sistema, es la pieza que más cambiaría esta conclusión.</li>
+    </ul>
+  </div>
+
+  <h2 id="limitaciones">Limitaciones</h2>
+  <ul>
+    <li><strong>Muestra chica:</strong> 41 eventos de alta confianza sostienen toda la estimación de frecuencia; el intervalo de confianza al 95% va de 1.24 a 2.34 por 100 moto-años (ver escenario de estrés).</li>
+    <li><strong>Severidad basada en 5 casos reales</strong> más un supuesto de pérdida total (100% del precio) para los 36 restantes — razonable para robo/hurto sin recuperación, pero no verificado caso por caso.</li>
+    <li><strong>Riesgo correlacionado no modelado:</strong> la simulación asume eventos independientes (un robo en Maturín no afecta la probabilidad de otro en Guarenas). No captura eventos catastróficos que afecten muchas motos a la vez (disturbios, incendio de depósito, etc.) — ese es precisamente el tipo de cola que una póliza sí cubre y un fondo dimensionado con data histórica individual podría no anticipar.</li>
+    <li><strong>No incluye la RCV</strong> ($19 de los $100): ese tramo cubre responsabilidad civil frente a terceros, un riesgo de naturaleza distinta (posible severidad ilimitada por lesiones/daños a terceros) que no se modela aquí y que probablemente sí justifica seguro por separado.</li>
+    <li><strong>Costos operativos de un fondo propio</strong> (gestión de reclamos, peritaje, tiempo de resolución) no están valorizados — la aseguradora los absorbe dentro de la prima.</li>
+  </ul>
+
+  <footer>
+    Generado a partir de 2,901 contratos de moto y 1034 vigentes en la flota activa. Sin datos de clientes ni PII — solo agregados y simulación. Pipeline: <code>analysis/scripts/09_build_loss_events.py</code>, <code>10_risk_simulation.py</code>, <code>11_generate_risk_report.py</code>.
+  </footer>
+</div>
