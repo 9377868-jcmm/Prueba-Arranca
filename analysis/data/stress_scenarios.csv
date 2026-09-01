@@ -1,0 +1,4 @@
+scenario,rate_per_100_bikeyears,expected_events_year,expected_annual_loss,p95_annual_loss,p99_annual_loss,prob_loss_exceeds_premium
+point_estimate,1.727,17.9,37617.0,53008.0,60330.0,0.0
+upper_95ci_frequency,2.344,24.2,51063.0,69042.0,77282.0,0.0023
+stress_include_fiscalia,3.371,34.9,70800.0,91540.0,100832.0,0.1466

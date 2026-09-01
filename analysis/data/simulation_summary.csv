@@ -1,0 +1,2 @@
+fleet_size,freq_per_100_bikeyears,expected_events_per_year,severity_mean,severity_median,expected_annual_loss,p50_annual_loss,p75_annual_loss,p90_annual_loss,p95_annual_loss,p99_annual_loss,p99_5_annual_loss,annual_premium_cost,prob_loss_exceeds_premium,indifference_premium_per_bike,5yr_stress_p95_cumulative_loss,capital_needed_p95_vs_premium_x_years
+1034,1.727,17.86,2108.0,2044.0,37667.0,37331.0,43550.0,49482.0,53202.0,60124.0,62904.0,83754.0,0.0,36.43,222334.0,0.64

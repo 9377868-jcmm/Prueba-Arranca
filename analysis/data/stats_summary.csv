@@ -1,0 +1,12 @@
+factor,stat,effect_size,p_value,significant_p<0.05
+Modelo de moto,chi2=32.4,V=0.117,0.0020598479358047883,True
+Marca,chi2=5.0,V=0.045,0.025793908711409217,True
+Sucursal / sede,chi2=22.6,V=0.097,0.019971171874450768,True
+Plan de pago,chi2=16.5,V=0.082,0.0002671627546187569,True
+Estado civil,chi2=0.2,V=0.009,0.6528413644393483,False
+Entidad federal (state),chi2=10.8,V=0.069,0.4562916096125972,False
+Score de crédito del cliente,r=-0.400,r=-0.400,1.254232475437602e-93,True
+Ingreso mensual declarado,r=-0.041,r=-0.041,0.17054484996386707,False
+Precio de contado,r=-0.037,r=-0.037,0.06836925344888543,False
+Cuota mensual,r=-0.055,r=-0.055,0.006748997890671199,True
+Plazo (nº de cuotas),r=0.074,r=0.074,0.000285288512661961,True

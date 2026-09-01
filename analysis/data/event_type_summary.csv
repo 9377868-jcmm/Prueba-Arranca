@@ -1,0 +1,6 @@
+event_type,confidence,n
+DAMAGED,high,2
+FISCALIA,low,39
+INDEMNIFIED,high,1
+KEYWORD_MENTION,very_low,66
+SINISTER,high,38

@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morosidad y Modelo de Moto</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-1-soft:  #cde2fb;
+    --series-2:       #eb6834;
+    --series-4:       #eda100;
+    --good:           #0ca30c;
+    --critical:       #d03b3b;
+    --success-text:   #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-1-soft:  #184f95;
+      --series-2:       #d95926;
+      --series-4:       #c98500;
+      --good:           #0ca30c;
+      --critical:       #e66767;
+      --success-text:   #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-1-soft:  #184f95;
+    --series-2:       #d95926;
+    --series-4:       #c98500;
+    --good:           #0ca30c;
+    --critical:       #e66767;
+    --success-text:   #0ca30c;
+  }
+
+  * { box-sizing: border-box; }
+  .viz-root {
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 32px 20px 80px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  header.page-head { margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--series-1);
+  }
+  h1 { font-size: 26px; margin: 6px 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 14.5px; max-width: 720px; line-height: 1.5; }
+  .privacy-note {
+    margin-top: 14px; font-size: 12.5px; color: var(--text-muted);
+    border-left: 2px solid var(--baseline); padding-left: 10px; max-width: 720px; line-height: 1.5;
+  }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card .desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; max-width: 680px; line-height: 1.5;}
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .kpi .label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+  .kpi .foot { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  @media (max-width: 760px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+
+  svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .grid-line { stroke: var(--grid); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .bar-fill { fill: var(--series-1); }
+  .bar-fill.soft { fill: var(--series-1-soft); }
+  .bar-label { fill: var(--text-primary); font-size: 12.5px; }
+  .bar-cat   { fill: var(--text-secondary); font-size: 12.5px; }
+  .n-label   { fill: var(--text-muted); font-size: 11px; }
+
+  .bar-row { cursor: pointer; }
+  .bar-row rect.bar-fill { transition: opacity .12s; }
+  .bar-row:hover rect.bar-fill { opacity: .78; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 50;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 11px; font-size: 12.5px; color: var(--text-primary);
+    box-shadow: 0 6px 20px rgba(0,0,0,.18);
+    opacity: 0; transform: translateY(2px); transition: opacity .1s, transform .1s;
+    max-width: 240px; line-height: 1.45;
+  }
+  .tooltip.show { opacity: 1; transform: translateY(0); }
+  .tooltip .t-title { font-weight: 600; margin-bottom: 2px; }
+  .tooltip .t-row { color: var(--text-secondary); }
+  .tooltip .t-row b { color: var(--text-primary); }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data-table th {
+    text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11.5px;
+    text-transform: uppercase; letter-spacing: .03em; padding: 8px 10px; border-bottom: 1px solid var(--grid);
+  }
+  table.data-table td { padding: 9px 10px; border-bottom: 1px solid var(--grid); color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag.sig { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--success-text); }
+  .tag.ns  { background: color-mix(in srgb, var(--text-muted) 18%, transparent); color: var(--text-secondary); }
+  .muted-num { color: var(--text-muted); }
+
+  .two-col { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px; }
+  @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.takeaways { margin: 0; padding-left: 18px; }
+  ul.takeaways li { margin-bottom: 10px; font-size: 14px; line-height: 1.55; color: var(--text-primary); }
+  ul.takeaways b { color: var(--series-1); }
+
+  footer.methodology { color: var(--text-muted); font-size: 12px; line-height: 1.6; margin-top: 28px; }
+  footer.methodology h3 { color: var(--text-secondary); font-size: 12.5px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="viz-root" data-palette="#2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4,#008300,#4a3aa7,#e34948">
+  <div class="wrap">
+    <header class="page-head">
+      <div class="eyebrow">Investigación de cliente ideal · DalePlay (backup histórico)</div>
+      <h1>Correlaciones entre modelo de moto y morosidad</h1>
+      <p class="sub">
+        Análisis de <b>3,957 contratos de arrendamiento (leases)</b> entregados, reconstruidos a partir del
+        backup <code>dpbackup2</code>. Se define <b>morosidad</b> como haber registrado al menos un evento
+        negativo de cobranza (mora, incumplimiento de promesa de pago, gestión externa, demanda, etc.) en el
+        historial de estatus del contrato.
+      </p>
+      <p class="privacy-note">
+        Nota de privacidad: este reporte muestra únicamente cifras agregadas y anonimizadas. No se incluyen
+        nombres, cédulas, teléfonos, correos ni ninguna otra información que identifique a clientes individuales.
+        La base de datos restaurada se mantiene local y no fue publicada.
+      </p>
+    </header>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="label">Contratos analizados</div>
+        <div class="value">3,957</div>
+        <div class="foot">Excluye rechazados / anulados / cancelados</div>
+      </div>
+      <div class="kpi">
+        <div class="label">De ellos, contratos de motos</div>
+        <div class="value">2,419</div>
+        <div class="foot">61% del total (resto: celulares, línea blanca, etc.)</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Morosidad alguna vez (moto)</div>
+        <div class="value" style="color:var(--critical)">49.5%</div>
+        <div class="foot">Al menos un evento negativo de cobranza</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Morosidad severa (moto)</div>
+        <div class="value" style="color:var(--critical)">4.7%</div>
+        <div class="foot">Gestión externa, demanda o fiscalía</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Morosidad por modelo de moto</h2>
+      <p class="desc">
+        % de contratos con al menos un evento de mora, por modelo (mínimo 15 contratos por modelo).
+        La diferencia entre el modelo más problemático y el más sano es de <b>39.5 puntos</b> — de 70.8%
+        (Horse Rayas Locas) a 31.3% (Xpress Lite). Pasa el cuello de botella: la relación es estadísticamente
+        significativa (χ² = 32.4, p = 0.002) aunque el efecto es modesto (V de Cramér = 0.12).
+      </p>
+      <svg id="chart-model" width="100%" viewBox="0 0 960 520" role="img" aria-label="Morosidad por modelo de moto"></svg>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>El score del cliente pesa más que el modelo</h2>
+        <p class="desc">
+          Cada punto es un modelo: eje X = score promedio de los clientes que lo arrendaron, eje Y = % de
+          morosidad del modelo, tamaño = número de contratos. La correlación a nivel de contrato entre
+          <b>score del cliente y morosidad es r = −0.40</b> (p ≈ 10⁻⁹³, n=2,419) — con enorme diferencia el
+          predictor más fuerte de todo el análisis. A nivel de modelo, el score promedio también correlaciona
+          con la morosidad del modelo (r = −0.55, p = 0.04): buena parte de lo que parece "efecto modelo" es en
+          realidad <b>selección de segmento de cliente</b> — ciertos modelos atraen clientes de menor score.
+        </p>
+        <svg id="chart-scatter" width="100%" viewBox="0 0 480 380" role="img" aria-label="Score de cliente vs morosidad por modelo"></svg>
+      </div>
+
+      <div class="card">
+        <h2>Otros factores correlacionados</h2>
+        <p class="desc">Pruebas χ² / correlación punto-biserial sobre el subconjunto de motos (n=2,419).</p>
+        <table class="data-table">
+          <thead><tr><th>Factor</th><th>Efecto</th><th>p</th><th>Sig.</th></tr></thead>
+          <tbody id="stats-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>Morosidad por sucursal (sede)</h2>
+        <p class="desc">χ² = 22.6, p = 0.02 — significativo, efecto pequeño (V = 0.10).</p>
+        <svg id="chart-branch" width="100%" viewBox="0 0 480 340" role="img" aria-label="Morosidad por sucursal"></svg>
+      </div>
+      <div class="card">
+        <h2>Morosidad por plan de pago</h2>
+        <p class="desc">χ² = 16.5, p = 0.0003 — el más significativo de los factores no ligados al cliente.</p>
+        <svg id="chart-payment" width="100%" viewBox="0 0 480 260" role="img" aria-label="Morosidad por plan de pago"></svg>
+        <h2 style="margin-top:24px">Morosidad por cohorte (año de originación)</h2>
+        <p class="desc">2025 muestra un salto marcado frente a 2024 (2026 parcial, datos al corte del backup).</p>
+        <svg id="chart-year" width="100%" viewBox="0 0 480 200" role="img" aria-label="Morosidad por año"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Perfil de cliente / producto ideal (menor riesgo)</h2>
+      <ul class="takeaways">
+        <li><b>El score interno de crédito es el filtro más potente.</b> Es 3-4× más predictivo que cualquier
+          atributo del producto o la sucursal — priorizar el underwriting sobre el catálogo.</li>
+        <li><b>Modelos de gama "Xpress Lite" / rango de precio medio-bajo con plazos cortos</b> muestran la menor
+          morosidad (31%); modelos como Horse Rayas Locas, RK 250 y EK Xpress de Rayo superan 65%, pero en buena
+          parte porque los compra un segmento de score más bajo, no necesariamente por el producto en sí.</li>
+        <li><b>Plazos más largos (más cuotas) correlacionan con más mora</b> (r=0.07, p&lt;0.001) — contratos de
+          plazo corto tienden a comportarse mejor.</li>
+        <li><b>El plan de pago semanal y mensual superan al quincenal</b> (45–53% vs 59% de morosidad) — vale la
+          pena revisar por qué "15last" concentra el peor desempeño.</li>
+        <li><b>Sucursales de Temblador, Guatire y Puerto Ordaz</b> muestran morosidad ~60%+, frente a ~39-45% en
+          Tucupita y Barcelona — posible señal para reforzar cobranza o scoring regional.</li>
+        <li><b>La cosecha 2025 empeoró notablemente</b> frente a 2024 (62% vs 47%) — vale la pena cruzar con el
+          contexto macro/cambiario de ese período antes de generalizar por modelo.</li>
+      </ul>
+    </div>
+
+    <footer class="methodology">
+      <h3>Metodología</h3>
+      El archivo <code>dpbackup2.rar</code> resultó ser un dump de PostgreSQL (formato directorio, versión de
+      catálogo 1.16 / Postgres 18) de una base de datos Django llamada <code>dale-play-services-1-db</code>. Como
+      el cliente <code>pg_restore</code> disponible sólo soporta hasta la versión 1.15, la tabla de contenidos se
+      reconstruyó leyendo las cadenas de texto embebidas en <code>toc.dat</code> (nombres de tabla, columnas de
+      cada <code>COPY</code> y archivo de datos asociado) y los 48 archivos <code>NNNN.dat.gz</code> se cargaron
+      directamente a un Postgres 16 local. "Morosidad" se calculó a partir de <code>status_records_statusrecord</code>
+      (historial completo de cambios de estatus de cobranza por contrato), no del campo estático
+      <code>fees_fees.paid</code> (que resultó no usarse en producción). Las correlaciones son χ² de independencia
+      (variables categóricas, con V de Cramér como tamaño de efecto) y correlación punto-biserial (variables
+      continuas vs. binaria). Todas las pruebas son de asociación, no de causalidad.
+    </footer>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function () {
+  const root = document.querySelector('.viz-root');
+  const isDark = () => {
+    const t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+  const cssVar = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+
+  const tooltip = document.getElementById('tooltip');
+  function showTip(evt, html) {
+    tooltip.innerHTML = html;
+    tooltip.classList.add('show');
+    moveTip(evt);
+  }
+  function moveTip(evt) {
+    const pad = 14;
+    let x = evt.clientX + pad, y = evt.clientY + pad;
+    const rect = tooltip.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) x = evt.clientX - rect.width - pad;
+    if (y + rect.height > window.innerHeight) y = evt.clientY - rect.height - pad;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+  function hideTip() { tooltip.classList.remove('show'); }
+
+  const NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // ---------- Horizontal bar chart (model delinquency) ----------
+  const modelData = [
+    {name:"Horse Rayas Locas", brand:"Empire", n:89, pct:70.8, plazo:31.3, price:1726},
+    {name:"RK 250", brand:"Empire", n:20, pct:65.0, plazo:32.4, price:2446},
+    {name:"EK Xpress de Rayo", brand:"Empire", n:77, pct:64.9, plazo:27.7, price:1396},
+    {name:"New Horse", brand:"Empire", n:373, pct:62.7, plazo:31.9, price:1676},
+    {name:"EK Xpress de Paleta", brand:"Empire", n:456, pct:55.9, plazo:27.8, price:1476},
+    {name:"TX 150", brand:"Empire", n:65, pct:55.4, plazo:23.3, price:2016},
+    {name:"Owen 200", brand:"Empire Keeway", n:31, pct:54.8, plazo:29.0, price:1736},
+    {name:"EK Xpress 200", brand:"Empire", n:297, pct:54.5, plazo:28.3, price:1480},
+    {name:"New Outlook II", brand:"Empire", n:41, pct:53.7, plazo:27.5, price:2871},
+    {name:"New Owen", brand:"Empire", n:269, pct:53.2, plazo:30.3, price:1576},
+    {name:"RK 200", brand:"Empire", n:537, pct:50.1, plazo:30.4, price:2086},
+    {name:"TX 250 GS", brand:"Empire Keeway", n:24, pct:50.0, plazo:28.0, price:3160},
+    {name:"Matrix 150", brand:"Empire", n:79, pct:49.4, plazo:26.7, price:1712},
+    {name:"Xpress Lite", brand:"Empire Keeway", n:16, pct:31.2, plazo:35.6, price:1166},
+  ];
+
+  function renderModelBars() {
+    const svg = document.getElementById('chart-model');
+    svg.innerHTML = '';
+    const W = 960, H = 520;
+    const marginL = 190, marginR = 60, marginT = 10, marginB = 30;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const rowH = plotH / modelData.length;
+    const barH = Math.min(20, rowH * 0.56);
+    const maxV = 80;
+
+    const grid = cssVar('--grid'), baseline = cssVar('--baseline'), barFill = cssVar('--series-1');
+    const critical = cssVar('--critical');
+
+    // gridlines + axis ticks
+    [0,20,40,60,80].forEach(v => {
+      const x = marginL + (v/maxV)*plotW;
+      svg.appendChild(el('line', {x1:x, x2:x, y1:marginT, y2:marginT+plotH, class:'grid-line'}));
+      const t = el('text', {x:x, y:marginT+plotH+18, class:'axis-label', 'text-anchor':'middle'});
+      t.textContent = v + '%';
+      svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+
+    modelData.forEach((d, i) => {
+      const y = marginT + i*rowH + (rowH-barH)/2;
+      const w = (d.pct/maxV)*plotW;
+      const g = el('g', {class:'bar-row'});
+      const label = el('text', {x:marginL-10, y:y+barH*0.72, class:'bar-cat', 'text-anchor':'end'});
+      label.textContent = d.name;
+      g.appendChild(label);
+      const rect = el('rect', {
+        x:marginL, y:y, width:Math.max(w,2), height:barH, rx:4, ry:4,
+        class:'bar-fill'
+      });
+      if (d.pct >= 60) rect.style.fill = critical;
+      g.appendChild(rect);
+      const valLabel = el('text', {x:marginL+w+8, y:y+barH*0.72, class:'bar-label'});
+      valLabel.textContent = d.pct.toFixed(1) + '%';
+      g.appendChild(valLabel);
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.name}</div>
+         <div class="t-row">Marca: <b>${d.brand}</b></div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Morosidad: <b>${d.pct.toFixed(1)}%</b></div>
+         <div class="t-row">Plazo prom.: <b>${d.plazo.toFixed(1)} cuotas</b></div>
+         <div class="t-row">Precio contado prom.: <b>$${d.price}</b></div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+
+    const axisTitle = el('text', {x:marginL+plotW/2, y:H-2, class:'axis-label', 'text-anchor':'middle'});
+    axisTitle.textContent = '% de contratos con morosidad registrada';
+    svg.appendChild(axisTitle);
+  }
+
+  // ---------- Scatter: model avg score vs pct delinquent ----------
+  const scatterData = [
+    {name:"Horse Rayas Locas", n:89, score:65.2, pct:70.8},
+    {name:"RK 250", n:20, score:76.1, pct:65.0},
+    {name:"EK Xpress de Rayo", n:77, score:60.7, pct:64.9},
+    {name:"New Horse", n:377, score:67.3, pct:63.0},
+    {name:"EK Xpress de Paleta", n:456, score:66.9, pct:55.9},
+    {name:"TX 150", n:65, score:64.8, pct:55.4},
+    {name:"Owen 200", n:31, score:83.3, pct:54.8},
+    {name:"EK Xpress 200", n:297, score:78.4, pct:54.5},
+    {name:"New Outlook II", n:41, score:71.9, pct:53.7},
+    {name:"New Owen", n:271, score:69.3, pct:53.5},
+    {name:"TX 250 GS", n:24, score:73.4, pct:50.0},
+    {name:"RK 200", n:543, score:72.2, pct:49.9},
+    {name:"Matrix 150", n:79, score:69.0, pct:49.4},
+    {name:"Xpress Lite", n:16, score:81.6, pct:31.2},
+  ];
+
+  function renderScatter() {
+    const svg = document.getElementById('chart-scatter');
+    svg.innerHTML = '';
+    const W = 480, H = 380;
+    const marginL = 44, marginR = 16, marginT = 12, marginB = 40;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const xMin = 55, xMax = 90, yMin = 20, yMax = 80;
+    const fill = cssVar('--series-1');
+
+    [60,70,80,90].forEach(v => {
+      const x = marginL + ((v-xMin)/(xMax-xMin))*plotW;
+      svg.appendChild(el('line', {x1:x, x2:x, y1:marginT, y2:marginT+plotH, class:'grid-line'}));
+      const t = el('text', {x:x, y:marginT+plotH+16, class:'axis-label', 'text-anchor':'middle'});
+      t.textContent = v; svg.appendChild(t);
+    });
+    [20,40,60,80].forEach(v => {
+      const y = marginT + plotH - ((v-yMin)/(yMax-yMin))*plotH;
+      svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:y, y2:y, class:'grid-line'}));
+      const t = el('text', {x:marginL-8, y:y+4, class:'axis-label', 'text-anchor':'end'});
+      t.textContent = v+'%'; svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+    svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:marginT+plotH, y2:marginT+plotH, class:'baseline'}));
+
+    const maxN = Math.max(...scatterData.map(d=>d.n));
+    scatterData.forEach(d => {
+      const cx = marginL + ((d.score-xMin)/(xMax-xMin))*plotW;
+      const cy = marginT + plotH - ((d.pct-yMin)/(yMax-yMin))*plotH;
+      const r = 5 + 14*Math.sqrt(d.n/maxN);
+      const c = el('circle', {cx:cx, cy:cy, r:r, fill:fill, opacity:0.55, stroke:fill, 'stroke-width':1.5});
+      c.style.cursor = 'pointer';
+      c.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.name}</div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Score promedio: <b>${d.score.toFixed(0)}</b></div>
+         <div class="t-row">Morosidad: <b>${d.pct.toFixed(1)}%</b></div>`));
+      c.addEventListener('mouseleave', hideTip);
+      svg.appendChild(c);
+    });
+
+    const xt = el('text', {x:marginL+plotW/2, y:H-4, class:'axis-label', 'text-anchor':'middle'});
+    xt.textContent = 'Score promedio del cliente (0-100)';
+    svg.appendChild(xt);
+    const yt = el('text', {x:14, y:marginT+plotH/2, class:'axis-label', 'text-anchor':'middle', transform:`rotate(-90 14 ${marginT+plotH/2})`});
+    yt.textContent = '% morosidad del modelo';
+    svg.appendChild(yt);
+  }
+
+  // ---------- Vertical bar helper ----------
+  function renderVBars(svgId, data, opts) {
+    const svg = document.getElementById(svgId);
+    svg.innerHTML = '';
+    const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+    const W = vb[2], H = vb[3];
+    const marginL = 46, marginR = 12, marginT = 10, marginB = opts.rotateLabels ? 62 : 30;
+    const plotW = W - marginL - marginR, plotH = H - marginT - marginB;
+    const maxV = opts.maxV || Math.max(...data.map(d=>d.pct)) * 1.2;
+    const barW = plotW / data.length * 0.56;
+    const gap = plotW / data.length;
+    const fill = cssVar('--series-1'), critical = cssVar('--critical');
+
+    [0, maxV/2, maxV].forEach(v => {
+      const y = marginT + plotH - (v/maxV)*plotH;
+      svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:y, y2:y, class:'grid-line'}));
+      const t = el('text', {x:marginL-8, y:y+4, class:'axis-label', 'text-anchor':'end'});
+      t.textContent = Math.round(v)+'%'; svg.appendChild(t);
+    });
+    svg.appendChild(el('line', {x1:marginL, x2:marginL, y1:marginT, y2:marginT+plotH, class:'baseline'}));
+    svg.appendChild(el('line', {x1:marginL, x2:marginL+plotW, y1:marginT+plotH, y2:marginT+plotH, class:'baseline'}));
+
+    data.forEach((d,i) => {
+      const cx = marginL + gap*i + gap/2;
+      const h = (d.pct/maxV)*plotH;
+      const y = marginT + plotH - h;
+      const g = el('g', {class:'bar-row'});
+      const rect = el('rect', {x:cx-barW/2, y:y, width:barW, height:h, rx:4, ry:4, class:'bar-fill'});
+      if (opts.highlightHigh && d.pct >= opts.highlightHigh) rect.style.fill = critical;
+      g.appendChild(rect);
+      if (!opts.sparseLabels || i === 0 || i === data.length-1) {
+        const vt = el('text', {x:cx, y:y-6, class:'bar-label', 'text-anchor':'middle', style:'font-size:11px'});
+        vt.textContent = d.pct.toFixed(1)+'%';
+        g.appendChild(vt);
+      }
+      const lbl = el('text', {x:cx, y:marginT+plotH+16, class:'bar-cat', 'text-anchor': opts.rotateLabels ? 'end':'middle'});
+      lbl.textContent = d.label;
+      if (opts.rotateLabels) lbl.setAttribute('transform', `rotate(-40 ${cx} ${marginT+plotH+16})`);
+      g.appendChild(lbl);
+      g.addEventListener('mousemove', (evt) => showTip(evt,
+        `<div class="t-title">${d.label}</div>
+         <div class="t-row">Contratos: <b>${d.n}</b></div>
+         <div class="t-row">Morosidad: <b>${d.pct.toFixed(1)}%</b></div>`));
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+  }
+
+  const branchData = [
+    {label:"Temblador", n:142, pct:62.7},
+    {label:"Guatire", n:246, pct:61.8},
+    {label:"Pto Ordaz", n:99, pct:61.6},
+    {label:"El Panita", n:246, pct:58.1},
+    {label:"Guarenas", n:949, pct:55.1},
+    {label:"Caracas", n:181, pct:54.7},
+    {label:"Valencia", n:91, pct:53.8},
+    {label:"Maturín", n:249, pct:49.8},
+    {label:"Píritu", n:109, pct:49.5},
+    {label:"Tucacas", n:23, pct:47.8},
+    {label:"Barcelona", n:18, pct:44.4},
+    {label:"Tucupita", n:62, pct:38.7},
+  ];
+  const paymentData = [
+    {label:"Quincenal", n:1148, pct:59.1},
+    {label:"Semanal", n:1088, pct:53.0},
+    {label:"Mensual", n:183, pct:45.4},
+  ];
+  const yearData = [
+    {label:"2024", n:718, pct:47.1},
+    {label:"2025", n:1357, pct:62.3},
+    {label:"2026*", n:344, pct:45.3},
+  ];
+
+  const statsRows = [
+    {factor:"Score de crédito del cliente", effect:"r = −0.40", sig:true, p:"p ≈ 10⁻⁹³"},
+    {factor:"Modelo de moto", effect:"V = 0.12", sig:true, p:"p = 0.002"},
+    {factor:"Score promedio por modelo", effect:"r = −0.55", sig:true, p:"p = 0.04"},
+    {factor:"Plan de pago (semanal/quinc./mensual)", effect:"χ² = 16.5", sig:true, p:"p = 0.0003"},
+    {factor:"Plazo (nº de cuotas)", effect:"r = 0.07", sig:true, p:"p = 0.0003"},
+    {factor:"Sucursal / sede", effect:"V = 0.10", sig:true, p:"p = 0.02"},
+    {factor:"Cuota mensual", effect:"r = −0.06", sig:true, p:"p = 0.007"},
+    {factor:"Marca (a nivel agregado)", effect:"χ² = 7.0", sig:false, p:"p = 0.07"},
+    {factor:"Precio de contado", effect:"r = −0.04", sig:false, p:"p = 0.07"},
+    {factor:"% de inicial pagado", effect:"r = −0.01", sig:false, p:"p = 0.62"},
+    {factor:"Ingreso mensual declarado", effect:"r = −0.003", sig:false, p:"p = 0.92"},
+    {factor:"Estado civil / entidad federal", effect:"—", sig:false, p:"n.s."},
+  ];
+
+  function renderStatsTable() {
+    const tbody = document.getElementById('stats-table-body');
+    tbody.innerHTML = '';
+    statsRows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.factor}</td><td class="muted-num">${r.effect}</td>
+        <td class="muted-num">${r.p.replace('p = ','').replace('p ≈ ','≈')}</td>
+        <td><span class="tag ${r.sig ? 'sig':'ns'}">${r.sig ? 'Sí' : 'No'}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderAll() {
+    renderModelBars();
+    renderScatter();
+    renderVBars('chart-branch', branchData, {maxV: 70, rotateLabels:true, highlightHigh:60, sparseLabels:true});
+    renderVBars('chart-payment', paymentData, {maxV: 70, highlightHigh:58});
+    renderVBars('chart-year', yearData, {maxV: 70, highlightHigh:60});
+    renderStatsTable();
+  }
+
+  renderAll();
+  window.addEventListener('resize', renderAll);
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
+  document.addEventListener('mousemove', (e) => { if (tooltip.classList.contains('show')) moveTip(e); });
+})();
+</script>
+</body>
+</html>
