@@ -43,7 +43,7 @@ th{background:var(--panel)}
 <ol>
 <li><a href="#que">Qué es y para qué sirve</a></li>
 <li><a href="#empezar">Empezar en 1 minuto</a></li>
-<li><a href="#pestanas">Las seis pestañas</a></li>
+<li><a href="#pestanas">Filtros y pestañas</a></li>
 <li><a href="#numeros">Cómo se calculan los números</a></li>
 <li><a href="#enlaces">Compartir resultados y exportar</a></li>
 <li><a href="#funciona">Cómo funciona por dentro</a></li>
@@ -74,19 +74,27 @@ th{background:var(--panel)}
 <li>Copie el enlace del navegador y envíelo por WhatsApp: quien lo abra verá lo mismo que usted.</li>
 </ol>
 
-<h2 id="pestanas">3. Las seis pestañas</h2>
+<h2 id="pestanas">3. Filtros y pestañas</h2>
 <p>Arriba de las pestañas hay un resumen: fecha del último corte, número de cortes, planes, empresas, modelos y cambios. La etiqueta verde indica la antigüedad de los datos y pasa a ámbar si superan 20 días.</p>
 
+<h3>3.0 Barra de filtros (común a todas las pestañas)</h3>
+<p>Debajo de las pestañas está la barra de filtros. Lo que elija ahí se aplica a todas las vistas y se conserva al cambiar de pestaña. En el celular aparece plegada: toque «Filtros» para abrirla. Los filtros activos se ven como etiquetas con una «×» para quitarlos uno a uno, o «Limpiar todo».</p>
+<ul>
+<li><strong>Marca</strong>: elige una marca (Empire Keeway, Toro, Bera, Haojue…). Las variantes del mismo nombre ya están unificadas (por ejemplo, «Empire» y «Empire Keeway»). Los planes sin marca indicada se agrupan en «Sin marca indicada».</li>
+<li><strong>Empresa</strong>, <strong>Inicial máx.</strong>, <strong>Cuota mensual máx.</strong> (en US$), <strong>Tasa € → US$</strong> y <strong>Solo confianza Alta/Media</strong>.</li>
+<li><strong>Incluir datos manuales</strong>: activo por defecto; desmárquelo para ver solo datos recolectados.</li>
+<li>Debajo hay un contador: «N planes de M modelos con estos filtros».</li>
+</ul>
+<p>El botón «atrás» del navegador regresa a la pestaña anterior.</p>
+
 <h3>3.1 Mejores planes (pestaña inicial)</h3>
-<p><strong>Controles generales</strong></p>
+<p><strong>Controles de esta pestaña</strong> (los topes de precio, la confianza y la tasa están en la barra de filtros)</p>
 <div class="tw"><table>
 <tr><th>Control</th><th>Qué hace</th></tr>
-<tr><td>Inicial máx. US$</td><td>Oculta los planes cuya inicial supera ese monto.</td></tr>
-<tr><td>Cuota mensual máx. US$</td><td>Oculta los planes cuya cuota mensual equivalente supera ese monto.</td></tr>
-<tr><td>Solo confianza Alta/Media</td><td>Descarta los datos de confianza Baja (viejos o dudosos).</td></tr>
-<tr><td>€ → US$</td><td>Tasa de conversión del euro. Sin ella, los planes en euros (Glik) no entran al ranking. Se llena sola si <code>data/tasas.json</code> trae <code>eur_usd</code> para el corte.</td></tr>
 <tr><td>Filtrar modelos</td><td>Busca modelos por nombre en la tabla resumen.</td></tr>
-<tr><td>Deslizadores Costo total / Cuota / Inicial</td><td>Definen cuánto pesa cada criterio en el «mejor equilibrio». Por defecto 0,5 / 0,3 / 0,2. Si solo le importa la cuota, suba ese deslizador y baje los otros.</td></tr>
+<tr><td>Incluir modelos de una sola empresa</td><td>Por defecto la tabla resumen muestra solo modelos que ofrecen 2 o más empresas (los únicos que se pueden comparar). Marque la casilla para verlos todos.</td></tr>
+<tr><td>Tasa € → US$ (barra de filtros)</td><td>Sin ella, los planes en euros (Glik) no entran al ranking. Se llena sola si <code>data/tasas.json</code> trae <code>eur_usd</code> para el corte.</td></tr>
+<tr><td>Deslizadores Costo total / Cuota / Inicial</td><td>Definen cuánto pesa cada criterio en el «mejor equilibrio» (se muestra el porcentaje). Por defecto 50 / 30 / 20 %. Si solo le importa la cuota, suba ese deslizador y baje los otros.</td></tr>
 </table></div>
 <p><strong>Tabla resumen por modelo.</strong> Solo muestra modelos con al menos un plan completo. Las columnas son: número de empresas, mejor equilibrio, más barato (costo total), menor cuota por mes y menor inicial. Una franja naranja a la izquierda indica que Arranca lidera ese modelo.</p>
 <p><strong>Detalle del modelo.</strong> Al tocar una fila, o elegirlo en la lista «Modelo», aparece:</p>
@@ -94,6 +102,7 @@ th{background:var(--panel)}
 <li><strong>Ranking</strong> de planes de mejor a peor, con inicial, cuota por mes, costo total, <em>brecha</em> (cuánto más caro que el más barato, en %) y confianza.</li>
 <li><strong>Etiquetas</strong>: <span class="b ok">Mejor equilibrio</span> <span class="b ac">Más barato</span> <span class="b ac">Menor inicial</span> <span class="b ac">Menor cuota</span>.</li>
 <li><strong>Gráfico de barras</strong> del costo total por plan (verde: el mejor; naranja: Arranca).</li>
+<li><strong>Datos manuales</strong>: se reconocen por la etiqueta <span class="b wn">Manual · fecha</span> y una trama en la fila. Si el primer lugar es un dato manual, se avisa.</li>
 <li><strong>Comparador</strong>: marque la casilla de 2 a 4 planes y aparece una comparación lado a lado.</li>
 <li><strong>Sin precio completo</strong>: planes a los que les falta cuota, número de cuotas o tasa (por ejemplo, los de Glik). No se pueden ordenar por costo total y se listan aparte.</li>
 <li><strong>Exportar CSV / JSON</strong> y <strong>Copiar enlace</strong>.</li>
@@ -111,7 +120,18 @@ th{background:var(--panel)}
 <h3>3.5 Arranca</h3>
 <p>Muestra, por cada modelo que Arranca ofrezca, su posición en el ranking (por ejemplo «3 de 5»), su costo total, el mejor del mercado y la brecha. Mientras Arranca no tenga planes registrados, la pestaña lo dice así: el sistema no inventa cifras. Tocar una fila lleva al detalle del modelo.</p>
 
-<h3>3.6 Empresas</h3>
+<h3>3.6 Cargar dato</h3>
+<p>Sirve para registrar a mano un precio cuando una empresa no publicó a tiempo o su información no se puede consultar en línea, para crear una empresa nueva o un modelo/plan nuevo. No hace falta tocar archivos: el formulario prepara todo y abre GitHub.</p>
+<ol>
+<li>Elija el tipo: <em>Actualizar o añadir precio</em>, <em>Empresa nueva</em> o <em>Retirar un dato manual</em>.</li>
+<li><strong>Precio</strong>: escriba la empresa y el modelo (se autocompletan). Elija un plan existente para cambiar su precio, o «Plan nuevo…» e indique n.º de cuotas y frecuencia. Si el modelo no existe, queda registrado como modelo nuevo. Complete marca, inicial, cuota y moneda.</li>
+<li>Indique motivo, fecha en que vio el dato, <strong>fuente obligatoria</strong> (quién se lo dijo o dónde lo vio, y dónde guardó la captura) y confianza. «Alta» exige un enlace de respaldo.</li>
+<li>Revise los mensajes: los <span class="b bd">errores</span> bloquean el envío; los avisos (por ejemplo, variación mayor a 40 % frente al último corte) piden cuidado. El formulario muestra el costo total y en qué puesto quedaría el plan en el ranking del modelo.</li>
+<li>Pulse <strong>Abrir en GitHub</strong>. Se abre la página de crear archivo con el contenido listo. Elija «Create a new branch for this commit and start a pull request» y pulse «Commit». Al unir ese PR, el sitio se actualiza solo. (Si el enlace resulta muy largo, el botón copia el contenido y abre GitHub para pegarlo.)</li>
+</ol>
+<div class="note"><strong>Qué pasa con un dato manual.</strong> Aparece con la etiqueta «Manual» en los rankings, el último corte y las exportaciones (columna Origen). Vence a los 30 días (máximo 45) o en cuanto un corte real traiga el mismo plan con fecha igual o posterior: el dato real siempre gana. No entra al historial, a «Evolución» ni a «Cambios de precio». Para retirarlo antes, use «Retirar un dato manual».</div>
+
+<h3>3.7 Empresas</h3>
 <p>Ficha de cada empresa: modelo de negocio, marcas, frecuencia, plazos, gastos administrativos, cómo publica sus precios y confianza. Etiquetas: <span class="b ok">Nuevo</span> (actor incorporado hace menos de 45 días o marcado «nuevo»), <span class="b" style="color:#d9480f">Propia</span> (Arranca), <span class="b wn">Próximamente</span>. Más abajo, «Actores en observación»: empresas detectadas que todavía no publican precios.</p>
 
 <h2 id="numeros">4. Cómo se calculan los números</h2>
@@ -129,6 +149,7 @@ th{background:var(--panel)}
 <li>La confianza viene del dato: <span class="b ok">Alta</span> (web oficial, catálogo), <span class="b wn">Media</span>, <span class="b bd">Baja</span> (histórico o desactualizado).</li>
 <li>Los modelos se agrupan por <code>modelo_clave</code>, de modo que «EK XPRESS II» y «XPRESS II» de distintas empresas se comparan entre sí.</li>
 <li>El ranking y los resúmenes usan solo el <strong>último corte</strong>. Los datos de prensa viejos se ven en Evolución y Cambios.</li>
+<li>Los datos manuales participan en el ranking y en el último corte igual que los demás, pero se identifican con la etiqueta «Manual» y caducan.</li>
 <li>Los planes con porcentaje (por ejemplo, un plan expresado en %) y otras monedas no entran en el ranking.</li>
 </ul>
 
@@ -141,10 +162,13 @@ th{background:var(--panel)}
 <tr><td><code>modelo</code></td><td>Modelo elegido.</td></tr>
 <tr><td><code>imax</code>, <code>cmax</code></td><td>Inicial máxima y cuota mensual máxima en US$.</td></tr>
 <tr><td><code>conf=1</code></td><td>Solo confianza Alta/Media.</td></tr>
+<tr><td><code>marca</code>, <code>emp</code></td><td>Marca y empresa elegidas en la barra de filtros.</td></tr>
+<tr><td><code>man=0</code></td><td>Sin datos manuales.</td></tr>
+<tr><td><code>todos=1</code></td><td>Incluye modelos de una sola empresa en «Mejores planes».</td></tr>
 <tr><td><code>eur</code></td><td>Tasa euro a dólar.</td></tr>
 <tr><td><code>wt</code>, <code>wc</code>, <code>wi</code></td><td>Pesos de costo total, cuota e inicial (0 a 1).</td></tr>
 <tr><td><code>cmp</code></td><td>Planes marcados para comparar.</td></tr>
-<tr><td><code>q</code>, <code>emp</code>, <code>frec</code>, <code>sort</code>, <code>dir</code></td><td>Búsqueda, empresa, frecuencia y orden en «Último corte».</td></tr>
+<tr><td><code>q</code>, <code>frec</code>, <code>sort</code>, <code>dir</code></td><td>Búsqueda, frecuencia y orden en «Último corte».</td></tr>
 </table></div>
 <p><strong>Exportar.</strong> Los botones <em>Exportar CSV</em> y <em>Exportar JSON</em> descargan lo que está en pantalla, con los filtros aplicados. El CSV usa punto y coma como separador y codificación UTF-8 con marca BOM, por lo que Excel en español lo abre con tildes y columnas correctas. Las celdas de texto que empiezan con <code>=</code>, <code>+</code>, <code>-</code> o <code>@</code> se protegen con un apóstrofo para evitar fórmulas maliciosas.</p>
 <p><strong>RSS.</strong> <code>/feed.xml</code> publica los cambios de precio del último corte; sirve para recibirlos en un lector de noticias.</p>
@@ -156,6 +180,8 @@ data/empresas.json            ← fichas de empresas (incluye Arranca)
 data/alias.json               ← nombres alternos → nombre oficial de la empresa
 data/tasas.json               ← tasas BCV por corte
 data/candidatos.json          ← actores detectados sin precios
+data/marcas.json              ← variantes de marca → marca canónica
+data/manual/*.json            ← datos cargados a mano (capa aparte, con vencimiento)
         │  npm run build  (scripts/build.mjs)
         ▼
 dist/  ← sitio listo: index.html, js/, css/, data/historial.json, meta.json, feed.xml
@@ -191,6 +217,7 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <li><strong>Arranca.</strong> Cuando tenga planes, incluirlos con <code>"empresa": "Arranca"</code> y cambiar su ficha de <code>"próximamente"</code> a <code>"activo"</code>. Nunca estimar ni inventar cifras.</li>
 <li><strong>Tasas BCV.</strong> Añadir la entrada del corte en <code>data/tasas.json</code> (<code>usd_ves</code>, <code>eur_ves</code>, <code>eur_usd</code>, <code>fuente</code>). Con <code>eur_usd</code>, los planes en euros entran al ranking.</li>
 <li><strong>Crear</strong> <code>data/cortes/AAAA-MM-DD.json</code> con la fecha del corte.</li>
+<li><strong>Revisar <code>data/manual/</code></strong>: retirar (o dejar vencer) los datos manuales que el nuevo corte ya cubre, y confirmar los que sigan siendo necesarios.</li>
 <li><strong>Verificar</strong> con <code>npm run validate</code> y <code>npm test</code>; revisar las advertencias.</li>
 <li><strong>Abrir el PR</strong> contra <code>main</code> con un resumen: cambios de precio, nuevos actores, advertencias explicadas. Al <strong>unirlo</strong> (Merge), Cloudflare publica solo en 1 a 3 minutos.</li>
 </ol>
@@ -208,6 +235,7 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <li>URL que no empieza por http o https.</li>
 <li>Plan repetido dentro del mismo corte.</li>
 <li>Un alias apunta a una empresa inexistente.</li>
+<li>Dato manual inválido: sin fuente, fecha futura o de más de 45 días, empresa inexistente, plan declarado «nuevo» que ya existe (o al revés), confianza Alta sin enlace.</li>
 </ul></td><td>
 <ul>
 <li>Plan sin precio ni texto de precio.</li>
@@ -217,6 +245,7 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <li>Una empresa desaparece del corte.</li>
 <li>Inicial o cuota que varía más de 40 %.</li>
 <li>Más de la mitad del corte con confianza Baja.</li>
+<li>Dato manual que varía más de 40 %, que vence pronto, que ya cubre el corte real o que es de Arranca.</li>
 </ul></td></tr>
 </table></div>
 <p>Una variación grande no siempre es un error (puede ser una promoción real), pero hay que confirmarla con la fuente antes de unir el PR.</p>
@@ -242,6 +271,7 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <tr><td>El build falla con «Could not detect a directory containing static files»</td><td>El Build command está vacío o es <code>npx wrangler deploy</code>. Debe ser el comando de construcción de la sección 9.</td></tr>
 <tr><td>El build falla en <code>npm run validate</code></td><td>Hay un error de datos. Lea el log: indica la fila y el motivo. Corrija el archivo en <code>data/cortes/</code> y haga un nuevo PR.</td></tr>
 <tr><td>El build falla en <code>npm test</code></td><td>Un cambio en <code>calc.js</code> rompió un cálculo. Revise la prueba que falla.</td></tr>
+<tr><td>Un dato manual no aparece</td><td>Venció, lo cubre un corte real más reciente, o fue omitido por inválido (el build lo avisa con «entrada manual omitida»). Revise <code>data/manual/</code> y el log del build.</td></tr>
 <tr><td>La página dice «No se pudieron cargar los datos»</td><td>No existe <code>dist/data/*.json</code> en el último despliegue, o falló la conexión. Pulse «Reintentar»; si persiste, revise el último build.</td></tr>
 <tr><td>No hay dirección pública</td><td>Active <strong>workers.dev</strong> en Domains &amp; Routes.</td></tr>
 <tr><td>Un modelo no aparece en «Mejores planes»</td><td>Ningún plan suyo tiene inicial, cuota, n° de cuotas y frecuencia convertibles. Búsquelo en «Último corte».</td></tr>

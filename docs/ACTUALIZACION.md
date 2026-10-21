@@ -10,6 +10,8 @@ Procedimiento para la rutina programada. Todo se hace por PR; el CI valida y el 
 3. **Arranca.** Si Arranca ya tiene planes publicados, incluirlos con `"empresa": "Arranca"` (la ficha ya existe con `propia: true`; pasar su `estado` a `"activo"` y completar los campos). Nunca inventar cifras.
 4. **Tasas BCV.** Agregar la entrada del corte en `data/tasas.json` (`usd_ves`, `eur_ves`, `eur_usd`, `fuente`). Con `eur_usd` los planes en € (Glik) entran al ranking.
 5. Escribir `data/cortes/AAAA-MM-DD.json` (fecha del corte).
+   - Revisar `data/manual/`: los datos cargados a mano vencen a los 30 días o cuando el corte real trae el mismo plan; retirar los que ya no hagan falta y avisar de los que sigan vigentes.
+   - Las marcas nuevas o con otro nombre se unifican en `data/marcas.json` (variante -> marca canónica; `null` = sin marca).
 6. Ejecutar `npm run validate` y `npm test`. Revisar las advertencias (variaciones mayores a 40 %, empresas que desaparecen) y explicarlas en el PR.
 7. Abrir el PR contra `main` con el resumen de cambios. Sin advertencias sin explicar: merge. El merge a `main` dispara la construcción y el despliegue en Cloudflare Workers Builds.
 

@@ -3,9 +3,11 @@ import {mkdirSync, cpSync, writeFileSync, rmSync} from 'node:fs';
 import {cargar} from './cargar.mjs';
 import {cambios, resumen, ultimoCorte} from '../public/js/calc.js';
 
-const {rows, empresas, tasas, candidatos} = cargar();
+const {rows, empresas, tasas, candidatos, manual, manualProblemas, marcas} = cargar();
+manualProblemas.forEach((m) => console.warn(`ATENCIÓN, entrada manual omitida: ${m}`));
 rmSync('dist', {recursive: true, force: true});
 cpSync('public', 'dist', {recursive: true});
+cpSync('docs/manual.html', 'dist/manual.html');
 mkdirSync('dist/data', {recursive: true});
 const w = (f, o) => writeFileSync(`dist/data/${f}`, JSON.stringify(o));
 const ult = ultimoCorte(rows);
@@ -14,7 +16,9 @@ w('historial.json', rows);
 w('empresas.json', empresas);
 w('tasas.json', tasas);
 w('candidatos.json', candidatos);
-w('meta.json', {...resumen(rows), generado: new Date().toISOString(), filas: rows.length});
+w('manual.json', manual);
+w('marcas.json', marcas);
+w('meta.json', {...resumen(rows), generado: new Date().toISOString(), filas: rows.length, manuales: manual.entradas.length, manual_rechazadas: manualProblemas.length});
 
 const esc = (s) => String(s).replace(/[<>&"]/g, (c) => ({'<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;'}[c]));
 const entries = camb.map((c) => `<entry><id>tag:motos-cuotas,${ult}:${esc(c.id)}</id><title>${esc(`${c.empresa} · ${c.modelo_clave}: inicial ${c.inicial_antes} → ${c.inicial_ahora}, cuota ${c.cuota_antes} → ${c.cuota_ahora}`)}</title><updated>${ult}T00:00:00Z</updated></entry>`).join('');

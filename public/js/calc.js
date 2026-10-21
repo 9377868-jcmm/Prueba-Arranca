@@ -11,14 +11,18 @@ export const diasEntreCuotas = (f = '') =>
 const num = (v) => typeof v === 'number' && Number.isFinite(v);
 
 // Agrega campos derivados a una fila cruda del historial.
-export function enriquecer(r, alias = {}) {
+export const SIN_MARCA = 'Sin marca indicada';
+const marcaNorm = (m, marcas) => (m in marcas ? marcas[m] : (m || null));
+
+export function enriquecer(r, alias = {}, marcas = {}) {
   const empresa = alias[r.empresa] || r.empresa;
   const dias = diasEntreCuotas(r.frecuencia);
   const cuota_mensual = num(r.cuota) && dias ? Math.round((r.cuota * 30 / dias) * 100) / 100 : null;
   const costo_total = num(r.inicial) && num(r.cuota) && num(r.n_cuotas) ? Math.round((r.inicial + r.cuota * r.n_cuotas) * 100) / 100 : null;
   return {
     ...r, empresa, empresa_raw: r.empresa,
-    origen: /^prensa/i.test(r.fuente || '') ? 'prensa' : 'corte',
+    origen: r.origen === 'manual' ? 'manual' : /^prensa/i.test(r.fuente || '') ? 'prensa' : 'corte',
+    marca_norm: marcaNorm(r.marca, marcas),
     moneda_norm: monedaNorm(r.moneda), dias, cuota_mensual, costo_total,
     id: `${slug(empresa)}~${slug(r.modelo_clave)}~${slug(r.plan)}`,
   };
@@ -29,7 +33,7 @@ export const vigentes = (rows) => { const c = ultimoCorte(rows); return rows.fil
 
 export function cambios(rows) {
   const g = new Map();
-  rows.forEach((r) => { if (!g.has(r.id)) g.set(r.id, []); g.get(r.id).push(r); });
+  rows.filter((r) => r.origen !== 'manual').forEach((r) => { if (!g.has(r.id)) g.set(r.id, []); g.get(r.id).push(r); });
   const out = [];
   g.forEach((rs, id) => {
     if (rs.length < 2) return;
@@ -71,8 +75,8 @@ const BAJA = /^baja/i;
  * Devuelve {ranking, sinCuota}: ranking = planes con inicial, cuota y n_cuotas (puntaje 0 = mejor);
  * sinCuota = planes con precio incompleto, ordenados por inicial.
  */
-export function rankearModelo(planes, {pesos = PESOS, iMax = null, cMax = null, soloConfiable = false, tasas = {}} = {}) {
-  let ps = planes.map((p) => aUsd(p, tasas)).filter((p) => !(soloConfiable && BAJA.test(p.confianza || '')));
+export function rankearModelo(planes, {pesos = PESOS, iMax = null, cMax = null, soloConfiable = false, sinManual = false, tasas = {}} = {}) {
+  let ps = planes.map((p) => aUsd(p, tasas)).filter((p) => !(soloConfiable && BAJA.test(p.confianza || '')) && !(sinManual && p.origen === 'manual'));
   if (num(iMax)) ps = ps.filter((p) => p.u_inicial === null || p.u_inicial <= iMax);
   if (num(cMax)) ps = ps.filter((p) => p.u_cuota_m === null || p.u_cuota_m <= cMax);
   const completos = ps.filter((p) => p.u_total !== null && p.u_cuota_m !== null && p.u_inicial !== null);
@@ -120,3 +124,38 @@ const esc = (v) => { let s = v === null || v === undefined ? '' : String(v); if 
 export const aCSV = (rows, cols) => '﻿' + [cols.map((c) => esc(c.t)).join(';'), ...rows.map((r) => cols.map((c) => esc(r[c.k])).join(';'))].join('\r\n');
 
 export const esNuevo = (e, hoy = new Date(), dias = 45) => e.estado === 'nuevo' || (e.alta && (hoy - new Date(e.alta + 'T00:00:00Z')) / 864e5 <= dias);
+
+// ---------- datos manuales (capa superpuesta; nunca entra al historial) ----------
+export const sumaDias = (f, d) => new Date(new Date(f + 'T00:00:00Z').getTime() + d * 864e5).toISOString().slice(0, 10);
+export const hoyISO = () => new Date().toISOString().slice(0, 10);
+
+// Entrada "precio" -> fila de plan con los mismos campos que el historial.
+export function filaManual(e, alias = {}, marcas = {}) {
+  return {
+    ...enriquecer({...e.plan, corte: e.fecha_dato, fecha_dato: e.fecha_dato, fuente: 'Manual: ' + e.fuente, url: e.url || '',
+      confianza: e.confianza || 'Media', nota: e.nota || '', origen: 'manual'}, alias, marcas),
+    man: {registrado_por: e.registrado_por, registrado: e.registrado, vence: e.vence || sumaDias(e.fecha_dato, 30), motivo: e.motivo, fuente: e.fuente},
+  };
+}
+
+// De la lista de entradas ({tipo:'precio', registrado, fila} / {tipo:'retiro', id, registrado}) a las filas activas.
+export function manualActivas(entradas = [], hoy = hoyISO()) {
+  const por = new Map();
+  entradas.filter((e) => e.tipo === 'precio').forEach((e) => {
+    const p = por.get(e.fila.id);
+    if (!p || e.registrado + e.fila.fecha_dato >= p.registrado + p.fila.fecha_dato) por.set(e.fila.id, e);
+  });
+  entradas.filter((e) => e.tipo === 'retiro').forEach((r) => { const p = por.get(r.id); if (p && r.registrado >= p.registrado) por.delete(r.id); });
+  return [...por.values()].map((e) => e.fila).filter((f) => f.man.vence >= hoy);
+}
+
+// Filas vigentes: último corte real + datos manuales activos (el dato real gana si es igual o más reciente).
+export function vigentesConManual(rows, entradas = [], hoy = hoyISO()) {
+  const out = new Map(vigentes(rows).map((r) => [r.id, r]));
+  for (const m of manualActivas(entradas, hoy)) {
+    const real = out.get(m.id);
+    if (real && real.origen === 'corte' && m.fecha_dato <= real.corte) continue;
+    out.set(m.id, real ? {...m, previo: {inicial: real.inicial, cuota: real.cuota, corte: real.corte}} : m);
+  }
+  return [...out.values()];
+}
