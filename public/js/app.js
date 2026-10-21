@@ -187,8 +187,15 @@ function vMejores(el) {
 }
 
 // ---------- vista: evolución ----------
+// Datos manuales como observaciones históricas (cada uno en su fecha); un dato real del mismo plan y fecha gana.
+function manualesParaEvolucion() {
+  if (S.man === '0') return [];
+  const ok = (r) => (!S.marca || (r.marca_norm ?? SIN_MARCA) === S.marca) && (!S.emp || r.empresa === S.emp);
+  return D.manual.entradas.filter((e) => e.tipo === 'precio').map((e) => e.fila).filter(ok);
+}
 function vEvolucion(el) {
-  const {rows} = datos();
+  const reales = datos().rows, claves = new Set(reales.map((r) => r.id + '|' + r.corte));
+  const rows = reales.concat(manualesParaEvolucion().filter((m) => !claves.has(m.id + '|' + m.corte)));
   const cuentaE = d3.rollup(rows, (v) => new Set(v.map((r) => r.empresa)).size, (r) => r.modelo_clave);
   const modelos = [...cuentaE.keys()].sort((a, b) => cuentaE.get(b) - cuentaE.get(a) || a.localeCompare(b, 'es'));
   if (!modelos.length) { el.append(h('div', {class: 'card'}, h('p', {class: 'empty'}, 'No hay datos con estos filtros.'))); return; }
@@ -198,15 +205,15 @@ function vEvolucion(el) {
   const draw = () => {
     const rs = rows.filter((r) => r.modelo_clave === S.modelo);
     const us = rs.map((r) => aUsd(r, tasas())).filter((r) => r.u_inicial !== null);
-    lineas(box, [...d3.group(us, (r) => r.empresa)].map(([empresa, l]) => ({empresa, pts: [...d3.group(l, (r) => r.corte)].map(([c, x]) => ({c, v: x[0].u_inicial, empresa}))})), ocultas, (e) => { ocultas.has(e) ? ocultas.delete(e) : ocultas.add(e); draw(); });
+    lineas(box, [...d3.group(us, (r) => r.empresa)].map(([empresa, l]) => ({empresa, pts: [...d3.group(l, (r) => r.corte)].map(([c, x]) => ({c, v: x[0].u_inicial, empresa, man: x[0].origen === 'manual'}))})), ocultas, (e) => { ocultas.has(e) ? ocultas.delete(e) : ocultas.add(e); draw(); });
     const cortes = [...new Set(rs.map((r) => r.corte))].sort().slice(-8);
     const g = d3.group(rs, (r) => r.empresa + ' | ' + r.plan);
     tb.replaceChildren(h('div', {class: 'tw', role: 'region', 'aria-label': 'Cuotas por corte', tabindex: 0}, h('table', {}, h('thead', {}, h('tr', {}, ['Empresa', 'Plan', ...cortes.map(fmtD)].map((t) => h('th', {scope: 'col'}, t)))),
-      h('tbody', {}, [...g].sort((a, b) => a[0].localeCompare(b[0], 'es')).map(([, l]) => h('tr', {}, td(l[0].empresa), td(l[0].plan), ...cortes.map((c) => { const r = l.find((x) => x.corte === c); return td(r ? (r.cuota !== null ? `${fmtN(r.cuota)} ${r.moneda_norm === 'EUR' ? '€' : r.moneda_norm === 'USD' ? 'US$' : ''}` : (r.cuota_txt || 'No publicada')) : '—', 'n'); })))))));
+      h('tbody', {}, [...g].sort((a, b) => a[0].localeCompare(b[0], 'es')).map(([, l]) => h('tr', {}, td(l[0].empresa), td(l[0].plan), ...cortes.map((c) => { const r = l.find((x) => x.corte === c); return td(r ? (r.cuota !== null ? `${fmtN(r.cuota)} ${r.moneda_norm === 'EUR' ? '€' : r.moneda_norm === 'USD' ? 'US$' : ''}` : (r.cuota_txt || 'No publicada')) + (r.origen === 'manual' ? ' (manual)' : '') : '—', 'n'); })))))));
   };
   inp.addEventListener('change', () => { const m = modelos.find((x) => x.toLowerCase() === inp.value.trim().toLowerCase()); if (m) set({modelo: m}, draw); else inp.value = S.modelo; });
   el.append(h('datalist', {id: 'dl-modelos-e'}, modelos.map((m) => h('option', {value: m}))), h('div', {class: 'card'}, h('h2', {}, 'Inicial por empresa en el tiempo'),
-    h('p', {class: 'note'}, 'En US$. Toque el nombre de una empresa en la leyenda para ocultarla o mostrarla. Incluye datos históricos de prensa.'),
+    h('p', {class: 'note'}, 'En US$. Toque el nombre de una empresa en la leyenda para ocultarla o mostrarla. Incluye datos históricos de prensa; los puntos huecos son datos cargados a mano.'),
     h('div', {class: 'ctrls'}, h('label', {class: 'cf'}, h('span', {}, 'Modelo'), inp)), box), h('div', {class: 'card'}, h('h2', {}, 'Cuotas del modelo, corte a corte'), h('p', {class: 'note'}, '"—" = la empresa no publicó ese plan en ese corte. La cuota va en la moneda y la frecuencia de cada empresa.'), hintMovil(), tb));
   draw();
 }
