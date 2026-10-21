@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Motos a cuotas en Caracas</title>
 <meta name="description" content="Compara planes de arrendamiento y financiamiento de motos en Caracas: inicial, cuota, costo total y mejores ofertas por modelo.">
-<link rel="alternate" type="application/atom+xml" title="Cambios de precio" href="/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Cambios de precio" href="feed.xml">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -16,20 +16,25 @@
     <p class="take" id="takeaway">Cargando…</p>
     <p class="chips" id="chips"></p>
   </header>
-  <div class="tiles" id="tiles"></div>
-  <div class="tabs" role="tablist" id="tabs">
-    <button role="tab" data-p="mejores">Mejores planes</button>
-    <button role="tab" data-p="evolucion">Evolución</button>
-    <button role="tab" data-p="cambios">Cambios de precio</button>
-    <button role="tab" data-p="corte">Último corte</button>
-    <button role="tab" data-p="arranca">Arranca</button>
-    <button role="tab" data-p="empresas">Empresas</button>
-  </div>
-  <main id="view" aria-live="polite"></main>
-  <footer class="note">Precios referenciales publicados por cada empresa (web, redes, prensa); verifique con la empresa antes de decidir. El costo total es inicial + cuota × número de cuotas y no incluye gastos administrativos.
-    · <a href="feed.xml">RSS de cambios</a></footer>
+  <nav class="tabs" id="tabs" aria-label="Secciones">
+    <a href="#mejores" data-p="mejores">Mejores planes</a>
+    <a href="#evolucion" data-p="evolucion">Evolución</a>
+    <a href="#cambios" data-p="cambios">Cambios de precio</a>
+    <a href="#corte" data-p="corte">Último corte</a>
+    <a href="#arranca" data-p="arranca">Arranca</a>
+    <a href="#cargar" data-p="cargar">Cargar dato</a>
+    <a href="#empresas" data-p="empresas">Empresas</a>
+  </nav>
+  <details id="filtros" class="filtros" open>
+    <summary>Filtros<span id="filtros-n"></span></summary>
+    <div id="filtros-cont"></div>
+  </details>
+  <p id="contador" class="note" aria-live="polite"></p>
+  <main id="view"></main>
+  <footer class="note">Precios referenciales publicados por cada empresa (web, redes, prensa) o cargados a mano y marcados como "Manual"; verifique con la empresa antes de decidir. El costo total es inicial + cuota × número de cuotas y no incluye gastos administrativos.
+    · <a href="feed.xml">RSS de cambios</a> · <a href="manual.html">Manual de uso</a></footer>
 </div>
-<script src="js/vendor/d3.min.js"></script>
+<script defer src="js/vendor/d3.min.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ import {readFileSync, readdirSync} from 'node:fs';
 import {cargar} from './cargar.mjs';
 import {cambios} from '../public/js/calc.js';
 
-const {rows, empresas, alias} = cargar();
+const {rows, empresas, alias, manual, manualProblemas, manualAvisos} = cargar();
 const err = [], adv = [];
 const hoy = new Date().toISOString().slice(0, 10);
 const nombres = new Set(empresas.map((e) => e.empresa));
@@ -44,7 +44,10 @@ if (n >= 1) {
   const ur = rows.filter((r) => r.corte === ult && r.origen === 'corte');
   if (ur.filter((r) => /^baja/i.test(r.confianza)).length > ur.length / 2) adv.push('más de la mitad del último corte tiene confianza Baja');
 }
-console.log(`${rows.length} filas, ${n} cortes, ${empresas.length} empresas`);
+manualProblemas.forEach((m) => err.push(`manual ${m}`));
+manualAvisos.forEach((m) => adv.push(`manual ${m}`));
+if (manual.entradas.length > 25) adv.push(`hay ${manual.entradas.length} entradas manuales: archive las vencidas`);
+console.log(`${rows.length} filas, ${n} cortes, ${empresas.length} empresas, ${manual.entradas.length} entradas manuales`);
 adv.forEach((m) => console.log('  ADVERTENCIA', m));
 err.forEach((m) => console.log('  ERROR', m));
 if (err.length || (process.argv.includes('--estricto') && adv.length)) { console.log(`${err.length} errores, ${adv.length} advertencias`); process.exit(1); }
