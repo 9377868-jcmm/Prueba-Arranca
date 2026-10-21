@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtempSync, mkdirSync, writeFileSync, cpSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {enriquecer, filaManual, manualActivas, vigentesConManual, cambios, resumen, rankearModelo} from '../public/js/calc.js';
+import {enriquecer, filaManual, manualActivas, vigentesConManual, cambios, resumen, rankearModelo, estadosManual} from '../public/js/calc.js';
 import {validarEntrada, nombrePlan, urlGitHub, nombreArchivo, MAX_URL} from '../public/js/manual-core.js';
 import {cargar} from '../scripts/cargar.mjs';
 
@@ -109,4 +109,16 @@ test('cargar(): lee data/manual, omite lo inválido y mezcla fichas', () => {
   assert.equal(c.manual.entradas.length, 1); assert.equal(c.manual.fichas.length, 1);
   assert.equal(c.empresas.length, 2); assert.equal(c.manualProblemas.length, 1); assert.match(c.manualProblemas[0], /malo\.json/);
   assert.equal(c.rows[0].marca_norm, 'Empire Keeway');
+});
+
+test('estadosManual: nada se pierde, solo cambia el estado', () => {
+  const rows = [real()];
+  const e = (o, p, r = '2026-10-21') => ({tipo: 'precio', registrado: r, archivo: 'a.json', fila: filaManual(entrada({registrado: r, ...o}, p), {}, marcas)});
+  const est = (entradas, hoy) => estadosManual(entradas, rows, hoy).map((x) => x.estado);
+  assert.deepEqual(est([e()], '2026-10-25'), ['vigente']);
+  assert.deepEqual(est([e()], '2026-12-30'), ['vencido']);
+  assert.deepEqual(est([e({fecha_dato: '2026-10-20'})], '2026-10-25'), ['cubierto']);
+  assert.deepEqual(est([e(), {tipo: 'retiro', id: real().id, registrado: '2026-10-22'}], '2026-10-25'), ['retirado']);
+  assert.deepEqual(est([e({}, {cuota: 22}, '2026-10-21'), e({}, {cuota: 25}, '2026-10-23')], '2026-10-25').sort(), ['reemplazado', 'vigente']);
+  assert.equal(estadosManual([e(), e({}, {cuota: 25}, '2026-10-23')], rows, '2026-10-25').length, 2); // ambos siguen listados
 });

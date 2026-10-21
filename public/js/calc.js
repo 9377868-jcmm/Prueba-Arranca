@@ -159,3 +159,17 @@ export function vigentesConManual(rows, entradas = [], hoy = hoyISO()) {
   }
   return [...out.values()];
 }
+
+// Estado de cada dato manual registrado (nada se borra: esto solo explica por qué cuenta o no).
+export function estadosManual(entradas = [], rows = [], hoy = hoyISO()) {
+  const real = new Map(vigentes(rows).map((r) => [r.id, r]));
+  const precios = entradas.filter((e) => e.tipo === 'precio');
+  const clave = (e) => e.registrado + e.fila.fecha_dato;
+  return precios.map((e) => {
+    const f = e.fila, r = real.get(f.id);
+    const retirado = entradas.some((x) => x.tipo === 'retiro' && x.id === f.id && x.registrado >= e.registrado);
+    const reemplazado = precios.some((o) => o !== e && o.fila.id === f.id && clave(o) > clave(e));
+    const estado = retirado ? 'retirado' : reemplazado ? 'reemplazado' : (r && r.origen === 'corte' && r.corte >= f.fecha_dato) ? 'cubierto' : f.man.vence < hoy ? 'vencido' : 'vigente';
+    return {fila: f, registrado: e.registrado, archivo: e.archivo, estado};
+  }).sort((a, b) => clave({registrado: b.registrado, fila: b.fila}).localeCompare(clave({registrado: a.registrado, fila: a.fila})));
+}
