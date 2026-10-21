@@ -11,6 +11,6 @@ Procedimiento para la rutina programada. Todo se hace por PR; el CI valida y el 
 4. **Tasas BCV.** Agregar la entrada del corte en `data/tasas.json` (`usd_ves`, `eur_ves`, `eur_usd`, `fuente`). Con `eur_usd` los planes en € (Glik) entran al ranking.
 5. Escribir `data/cortes/AAAA-MM-DD.json` (fecha del corte).
 6. Ejecutar `npm run validate` y `npm test`. Revisar las advertencias (variaciones mayores a 40 %, empresas que desaparecen) y explicarlas en el PR.
-7. Abrir el PR contra `main` con el resumen de cambios. Sin advertencias sin explicar: merge. El merge dispara `deploy.yml`.
+7. Abrir el PR contra `main` con el resumen de cambios. Sin advertencias sin explicar: merge. El merge a `main` dispara la construcción y el despliegue en Cloudflare Workers Builds.
 
 `frescura.yml` avisa por correo si pasan más de 17 días sin un corte nuevo.

@@ -1,5 +1,7 @@
-name = "motos-cuotas-caracas"
+name = "prueba-arranca"
 compatibility_date = "2026-10-01"
+workers_dev = true
+preview_urls = true
 
 [assets]
 directory = "./dist"

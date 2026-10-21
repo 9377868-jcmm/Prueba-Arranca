@@ -6,4 +6,7 @@ Monitor de planes de arrendamiento y financiamiento de motos en Caracas: compara
 - Datos en `data/` (un archivo por corte quincenal en `data/cortes/`). `scripts/build.mjs` genera `dist/`.
 - Comandos: `npm run validate`, `npm test`, `npm run build`, `npm run dev`, `npm run deploy`.
 - Actualización quincenal: ver `docs/ACTUALIZACION.md`.
-- Despliegue: `deploy.yml` en cada push a `main`; requiere los secretos `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`.
+- Despliegue: integración Git de Cloudflare Workers Builds (Worker `prueba-arranca`). Cada push a `main` se construye y publica solo.
+  - Build command: `npm ci && npm run validate && npm test && npm run build`
+  - Deploy command: `npx wrangler deploy`
+  - Production branch: `main`
