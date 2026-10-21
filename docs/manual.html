@@ -109,7 +109,7 @@ th{background:var(--panel)}
 </ul>
 
 <h3>3.2 Evolución</h3>
-<p>Línea de tiempo de la inicial en dólares por empresa para un modelo. Toque el nombre de una empresa en la leyenda (lado derecho) para ocultarla o mostrarla. Pase el cursor o toque un punto para ver fecha y monto. Debajo, la tabla de cuotas por corte (hasta los últimos 8). Incluye datos históricos de prensa (2024 a 2026).</p>
+<p>Línea de tiempo de la inicial en dólares por empresa para un modelo. Toque el nombre de una empresa en la leyenda (lado derecho) para ocultarla o mostrarla. Pase el cursor o toque un punto para ver fecha y monto. Debajo, la tabla de cuotas por corte (hasta los últimos 8). Incluye datos históricos de prensa (2024 a 2026); los datos cargados a mano se ven como puntos huecos.</p>
 
 <h3>3.3 Cambios de precio</h3>
 <p>Compara cada plan con su observación anterior y muestra solo los que cambiaron. Rojo: subió. Verde: bajó. Solo compara precios en la misma moneda. Con un único corte quincenal aún no hay mucho que ver: se llena desde el segundo corte.</p>
@@ -129,7 +129,8 @@ th{background:var(--panel)}
 <li>Revise los mensajes: los <span class="b bd">errores</span> bloquean el envío; los avisos (por ejemplo, variación mayor a 40 % frente al último corte) piden cuidado. El formulario muestra el costo total y en qué puesto quedaría el plan en el ranking del modelo.</li>
 <li>Pulse <strong>Abrir en GitHub</strong>. Se abre la página de crear archivo con el contenido listo. Elija «Create a new branch for this commit and start a pull request» y pulse «Commit». Al unir ese PR, el sitio se actualiza solo. (Si el enlace resulta muy largo, el botón copia el contenido y abre GitHub para pegarlo.)</li>
 </ol>
-<div class="note"><strong>Qué pasa con un dato manual.</strong> Aparece con la etiqueta «Manual» en los rankings, el último corte y las exportaciones (columna Origen). Vence a los 30 días (máximo 45) o en cuanto un corte real traiga el mismo plan con fecha igual o posterior: el dato real siempre gana. No entra al historial, a «Evolución» ni a «Cambios de precio». Para retirarlo antes, use «Retirar un dato manual».</div>
+<div class="note"><strong>Qué pasa con un dato manual.</strong> Aparece con la etiqueta «Manual» en los rankings, el último corte y las exportaciones (columna Origen). Vence a los 30 días (máximo 45) o en cuanto un corte real traiga el mismo plan con fecha igual o posterior: el dato real siempre gana. No entra a «Cambios de precio» ni a los resúmenes del corte; en «Evolución» aparece como un punto hueco (y «(manual)» en la tabla de cuotas) en la fecha del dato. Para retirarlo antes, use «Retirar un dato manual».</div>
+<div class="note"><strong>Nada se pierde.</strong> Cada dato manual queda guardado para siempre en el repositorio (carpeta <code>data/manual</code>, con el historial de Git), aunque venza. Al pie de «Cargar dato», la tabla «Datos manuales registrados» lista todos con su estado (vigente, vencido, cubierto por el corte real, reemplazado o retirado), permite descargarlos en CSV o JSON y tiene un botón «Renovar» que precarga el formulario con el mismo plan para confirmar el precio de nuevo. Las fichas de empresas cargadas a mano no vencen.</div>
 
 <h3>3.7 Empresas</h3>
 <p>Ficha de cada empresa: modelo de negocio, marcas, frecuencia, plazos, gastos administrativos, cómo publica sus precios y confianza. Etiquetas: <span class="b ok">Nuevo</span> (actor incorporado hace menos de 45 días o marcado «nuevo»), <span class="b" style="color:#d9480f">Propia</span> (Arranca), <span class="b wn">Próximamente</span>. Más abajo, «Actores en observación»: empresas detectadas que todavía no publican precios.</p>

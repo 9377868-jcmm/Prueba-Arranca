@@ -1,7 +1,7 @@
 // Pestaña "Cargar dato": arma una entrada manual, la valida y abre GitHub con el archivo listo para crear.
-import {vigentes, manualActivas, filaManual, rankearModelo, hoyISO, sumaDias} from './calc.js';
+import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, aCSV, hoyISO, sumaDias} from './calc.js';
 import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, urlGitHub} from './manual-core.js';
-import {h, fmtN, fmtUsd, fmtD} from './format.js';
+import {h, fmtN, fmtUsd, fmtD, descargar} from './format.js';
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento: no pasa nada */ } };
 const leer = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
@@ -161,9 +161,38 @@ export function vCargar(el, D, opciones = {}) {
     modo = k; barra.querySelectorAll('button').forEach((b) => { const on = b === ev.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); dibujar();
   }}, t)));
 
+  // ---- historial de datos manuales (nada se borra) y renovación
+  const ESTADOS = {vigente: ['Vigente', 'g'], vencido: ['Vencido', 'w'], cubierto: ['Cubierto por el corte real', 'b'], reemplazado: ['Reemplazado por uno más nuevo', 'b'], retirado: ['Retirado', 'w']};
+  const registro = estadosManual(D.manual.entradas, D.rows, hoy);
+  function renovar(f) {
+    modo = 'precio';
+    barra.querySelectorAll('button').forEach((b, i) => { b.classList.toggle('on', i === 0); b.setAttribute('aria-pressed', String(i === 0)); });
+    dibujar();
+    cEmpresa.value = f.empresa; cModelo.value = f.modelo_clave; cPlan.dataset.tocado = '';
+    refrescarPlanes();
+    if ([...cPlan.options].some((o) => o.value === f.plan)) cPlan.value = f.plan;
+    cInicial.value = f.inicial ?? ''; cCuota.value = f.cuota ?? ''; cMarca.value = f.marca_norm || f.marca || ''; cMarca.dataset.tocado = '1';
+    cMoneda.value = f.moneda_norm === 'EUR' ? 'EUR' : 'USD'; cFecha.value = hoy; cMotivo.value = 'otro'; cConf.value = f.confianza === 'Alta' ? 'Media' : f.confianza;
+    cFuente.value = ''; cFuente.placeholder = 'Confirme el dato y diga de dónde lo verificó hoy'; cNota.value = 'Renovación del dato del ' + f.fecha_dato;
+    actualizar(); cuerpo.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+  const COLS = [{k: 'estado', t: 'Estado'}, {k: 'empresa', t: 'Empresa'}, {k: 'modelo_clave', t: 'Modelo'}, {k: 'plan', t: 'Plan'}, {k: 'inicial', t: 'Inicial'}, {k: 'cuota', t: 'Cuota'}, {k: 'moneda_norm', t: 'Moneda'},
+    {k: 'fecha_dato', t: 'Fecha del dato'}, {k: 'vence', t: 'Vence'}, {k: 'registrado_por', t: 'Registrado por'}, {k: 'fuente', t: 'Fuente'}, {k: 'archivo', t: 'Archivo'}];
+  const plano = registro.map((r) => ({estado: ESTADOS[r.estado][0], empresa: r.fila.empresa, modelo_clave: r.fila.modelo_clave, plan: r.fila.plan, inicial: r.fila.inicial, cuota: r.fila.cuota, moneda_norm: r.fila.moneda_norm,
+    fecha_dato: r.fila.fecha_dato, vence: r.fila.man.vence, registrado_por: r.fila.man.registrado_por, fuente: r.fila.man.fuente, archivo: r.archivo}));
+  const historial = h('div', {class: 'card'}, h('h2', {}, 'Datos manuales registrados'),
+    h('p', {class: 'note'}, 'Nada se borra: cada dato manual queda guardado en el repositorio (carpeta data/manual) aunque venza, sea reemplazado o lo cubra un corte real. Aquí puede verlos todos, descargarlos y renovar los vencidos.'),
+    registro.length ? h('div', {class: 'tw', role: 'region', 'aria-label': 'Datos manuales registrados', tabindex: 0}, h('table', {}, h('thead', {}, h('tr', {}, ['Estado', 'Empresa y plan', 'Inicial', 'Cuota', 'Fecha del dato', 'Vence', 'Fuente', ''].map((t) => h('th', {scope: 'col'}, t)))),
+      h('tbody', {}, registro.map((r) => h('tr', {}, h('td', {}, h('span', {class: 'badge ' + ESTADOS[r.estado][1]}, ESTADOS[r.estado][0])),
+        h('td', {}, h('strong', {}, r.fila.empresa), h('div', {class: 'sub-t'}, `${r.fila.modelo_clave} · ${r.fila.plan}`)), h('td', {class: 'n'}, fmtN(r.fila.inicial)), h('td', {class: 'n'}, fmtN(r.fila.cuota)),
+        h('td', {}, fmtD(r.fila.fecha_dato)), h('td', {}, fmtD(r.fila.man.vence)), h('td', {}, h('div', {}, r.fila.man.fuente), h('div', {class: 'sub-t'}, `por ${r.fila.man.registrado_por}`)),
+        h('td', {}, ['vencido', 'cubierto', 'retirado'].includes(r.estado) ? h('button', {class: 'b', type: 'button', onclick: () => renovar(r.fila)}, 'Renovar') : null)))))) : h('p', {class: 'empty'}, 'Todavía no hay datos manuales.'),
+    registro.length > 0 && h('div', {class: 'ctrls mt'}, h('button', {class: 'b', type: 'button', onclick: () => descargar('datos-manuales.csv', aCSV(plano, COLS), 'text/csv;charset=utf-8')}, 'Exportar CSV'),
+      h('button', {class: 'b', type: 'button', onclick: () => descargar('datos-manuales.json', JSON.stringify(plano, null, 1), 'application/json')}, 'Exportar JSON')));
+
   el.append(h('div', {class: 'card'}, h('h2', {}, 'Cargar un dato a mano'),
     h('p', {class: 'note'}, 'Use esto cuando una empresa no publicó a tiempo o su información no se puede consultar en línea. El dato queda marcado como "Manual", vence a los 30 días o cuando el próximo corte traiga el dato real, y pasa por revisión (PR) antes de publicarse.'),
-    dl('dl-emp', empresas), h('datalist', {id: 'dl-mod'}), dl('dl-marca', marcasLista), barra, cuerpo, salida));
+    dl('dl-emp', empresas), h('datalist', {id: 'dl-mod'}), dl('dl-marca', marcasLista), barra, cuerpo, salida), historial);
   refrescarPlanes();
   dibujar();
 }

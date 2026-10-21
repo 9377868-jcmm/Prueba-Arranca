@@ -41,8 +41,8 @@ export function lineas(box, series, ocultas = new Set(), onToggle = () => {}) {
     const pts = s.pts.map((p) => ({...p, d: new Date(p.c + 'T00:00:00Z')})).sort((a, b) => a.d - b.d);
     if (!off) {
       svg.append('path').datum(pts).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2).attr('d', ln);
-      svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.v)).attr('r', 5).attr('fill', col)
-        .on('pointermove', (ev, p) => mostrar(box, tip, ev, [fmtD(p.c), `${s.empresa}: $${fmtN(p.v)}`])).on('pointerleave', () => { tip.hidden = true; });
+      svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.v)).attr('r', 5).attr('fill', (p) => p.man ? 'var(--bg)' : col).attr('stroke', col).attr('stroke-width', 2)
+        .on('pointermove', (ev, p) => mostrar(box, tip, ev, [fmtD(p.c) + (p.man ? ' · dato manual' : ''), `${s.empresa}: $${fmtN(p.v)}`])).on('pointerleave', () => { tip.hidden = true; });
     }
     ends.push({y: off ? 1e9 : y(pts[pts.length - 1].v), e: s.empresa, t: s.empresa + (off ? '' : ' · ' + fmtN(pts[pts.length - 1].v)), col, off});
   });
