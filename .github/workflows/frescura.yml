@@ -1,0 +1,18 @@
+name: Frescura de datos
+on:
+  schedule:
+    - cron: '0 12 4,19 * *'
+  workflow_dispatch:
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - name: Falla si el último corte tiene más de 17 días
+        run: |
+          ult=$(ls data/cortes | sed 's/.json//' | sort | tail -1)
+          dias=$(( ( $(date +%s) - $(date -d "$ult" +%s) ) / 86400 ))
+          echo "Último archivo de corte: $ult ($dias días)"
+          [ "$dias" -le 17 ] || { echo "::error::No hay corte nuevo hace $dias días"; exit 1; }

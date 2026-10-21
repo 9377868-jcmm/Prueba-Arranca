@@ -1,0 +1,11 @@
+{
+ "_nota": "Tasas BCV por corte. La rutina quincenal agrega una entrada por corte; null = sin dato.",
+ "cortes": {
+  "2026-10-20": {
+   "usd_ves": null,
+   "eur_ves": null,
+   "eur_usd": null,
+   "fuente": "BCV"
+  }
+ }
+}
