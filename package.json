@@ -1,0 +1,21 @@
+{
+  "name": "motos-cuotas-caracas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Monitor de motos a cuotas en Caracas",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run validate && npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "d3": "^7.9.0",
+    "wrangler": "^4.151.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
