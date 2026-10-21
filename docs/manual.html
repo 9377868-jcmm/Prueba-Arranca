@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual · Motos a cuotas en Caracas</title>
+<style>
+:root{--bg:#fff;--fg:#1b1b1f;--muted:#5f6370;--panel:#f6f6f8;--line:#dcdce2;--acc:#2456d6;--ok:#1a7f45;--warn:#a66300;--bad:#c0322b}
+@media(prefers-color-scheme:dark){:root{--bg:#121316;--fg:#ececf0;--muted:#a0a4b0;--panel:#1b1c21;--line:#33353d;--acc:#7fa2ff;--ok:#4cc27f;--warn:#e0a03a;--bad:#ef6a62}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:1.25rem 1rem 4rem}
+h1{font-family:Georgia,serif;font-weight:400;font-size:2rem;margin:.5rem 0}
+h2{font-size:1.35rem;margin:2.5rem 0 .5rem;padding-top:.5rem;border-top:1px solid var(--line)}
+h3{font-size:1.05rem;margin:1.5rem 0 .25rem}
+p,li{max-width:70ch}
+a{color:var(--acc)}
+code{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:.05rem .35rem;font-size:.9em}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.75rem 1rem;overflow:auto;font-size:.85rem}
+pre code{border:0;padding:0;background:none}
+.lead{color:var(--muted);font-size:1.05rem}
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.75rem 1.25rem}
+.toc ol{margin:.25rem 0;padding-left:1.25rem;columns:2;column-gap:2rem}
+.note,.warn{border-left:4px solid var(--acc);background:var(--panel);padding:.5rem .9rem;border-radius:0 8px 8px 0;margin:1rem 0}
+.warn{border-color:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;margin:.75rem 0}
+th,td{border:1px solid var(--line);padding:.4rem .6rem;text-align:left;vertical-align:top}
+th{background:var(--panel)}
+.tw{overflow-x:auto}
+.b{display:inline-block;border:1px solid currentColor;border-radius:99px;padding:0 .5rem;font-size:.75rem;white-space:nowrap}
+.ok{color:var(--ok)}.wn{color:var(--warn)}.bd{color:var(--bad)}.ac{color:var(--acc)}
+@media(max-width:640px){.toc ol{columns:1}h1{font-size:1.6rem}}
+@media print{.toc{display:none}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Manual: Motos a cuotas en Caracas</h1>
+<p class="lead">Cómo usar el monitor para encontrar los mejores planes de arrendamiento y financiamiento de motos, y cómo funciona por dentro para mantenerlo al día.</p>
+
+<nav class="toc" aria-label="Contenido">
+<strong>Contenido</strong>
+<ol>
+<li><a href="#que">Qué es y para qué sirve</a></li>
+<li><a href="#empezar">Empezar en 1 minuto</a></li>
+<li><a href="#pestanas">Las seis pestañas</a></li>
+<li><a href="#numeros">Cómo se calculan los números</a></li>
+<li><a href="#enlaces">Compartir resultados y exportar</a></li>
+<li><a href="#funciona">Cómo funciona por dentro</a></li>
+<li><a href="#quincena">Actualización quincenal</a></li>
+<li><a href="#validacion">Validación de datos</a></li>
+<li><a href="#despliegue">Publicación en Cloudflare</a></li>
+<li><a href="#problemas">Solución de problemas</a></li>
+<li><a href="#glosario">Glosario</a></li>
+</ol>
+</nav>
+
+<h2 id="que">1. Qué es y para qué sirve</h2>
+<p>Es una página web que reúne los planes de motos a cuotas que publican las empresas de Caracas (inicial, cuota, número de cuotas, frecuencia de pago) y los pone en el mismo idioma para compararlos. Responde preguntas como:</p>
+<ul>
+<li>¿Qué empresa ofrece la <strong>mejor moto por modelo</strong>: la más barata en total, con la menor cuota o con la menor inicial?</li>
+<li>¿Qué planes caben en <strong>mi presupuesto</strong>?</li>
+<li>¿Cuáles precios <strong>cambiaron</strong> desde el último corte?</li>
+<li>¿Dónde queda <strong>Arranca</strong> frente al mercado y qué <strong>actores nuevos</strong> aparecieron?</li>
+</ul>
+<div class="warn"><strong>Importante.</strong> Los precios son referenciales: los publica cada empresa en su web, redes o prensa. Verifique con la empresa antes de decidir. El costo total no incluye gastos administrativos (se ven en la pestaña Empresas).</div>
+
+<h2 id="empezar">2. Empezar en 1 minuto</h2>
+<ol>
+<li>Abra la dirección del sitio (<code>https://prueba-arranca.&lt;su-subdominio&gt;.workers.dev</code>).</li>
+<li>En <strong>Mejores planes</strong>, mire la tabla de modelos: cada fila dice quién ofrece el mejor equilibrio, el plan más barato, la menor cuota y la menor inicial.</li>
+<li>Toque una fila (por ejemplo, <em>NEW HORSE</em>) para ver el ranking completo de ese modelo.</li>
+<li>Si tiene presupuesto, escriba la <strong>inicial máxima</strong> y la <strong>cuota mensual máxima</strong> en dólares. La lista se recorta sola.</li>
+<li>Copie el enlace del navegador y envíelo por WhatsApp: quien lo abra verá lo mismo que usted.</li>
+</ol>
+
+<h2 id="pestanas">3. Las seis pestañas</h2>
+<p>Arriba de las pestañas hay un resumen: fecha del último corte, número de cortes, planes, empresas, modelos y cambios. La etiqueta verde indica la antigüedad de los datos y pasa a ámbar si superan 20 días.</p>
+
+<h3>3.1 Mejores planes (pestaña inicial)</h3>
+<p><strong>Controles generales</strong></p>
+<div class="tw"><table>
+<tr><th>Control</th><th>Qué hace</th></tr>
+<tr><td>Inicial máx. US$</td><td>Oculta los planes cuya inicial supera ese monto.</td></tr>
+<tr><td>Cuota mensual máx. US$</td><td>Oculta los planes cuya cuota mensual equivalente supera ese monto.</td></tr>
+<tr><td>Solo confianza Alta/Media</td><td>Descarta los datos de confianza Baja (viejos o dudosos).</td></tr>
+<tr><td>€ → US$</td><td>Tasa de conversión del euro. Sin ella, los planes en euros (Glik) no entran al ranking. Se llena sola si <code>data/tasas.json</code> trae <code>eur_usd</code> para el corte.</td></tr>
+<tr><td>Filtrar modelos</td><td>Busca modelos por nombre en la tabla resumen.</td></tr>
+<tr><td>Deslizadores Costo total / Cuota / Inicial</td><td>Definen cuánto pesa cada criterio en el «mejor equilibrio». Por defecto 0,5 / 0,3 / 0,2. Si solo le importa la cuota, suba ese deslizador y baje los otros.</td></tr>
+</table></div>
+<p><strong>Tabla resumen por modelo.</strong> Solo muestra modelos con al menos un plan completo. Las columnas son: número de empresas, mejor equilibrio, más barato (costo total), menor cuota por mes y menor inicial. Una franja naranja a la izquierda indica que Arranca lidera ese modelo.</p>
+<p><strong>Detalle del modelo.</strong> Al tocar una fila, o elegirlo en la lista «Modelo», aparece:</p>
+<ul>
+<li><strong>Ranking</strong> de planes de mejor a peor, con inicial, cuota por mes, costo total, <em>brecha</em> (cuánto más caro que el más barato, en %) y confianza.</li>
+<li><strong>Etiquetas</strong>: <span class="b ok">Mejor equilibrio</span> <span class="b ac">Más barato</span> <span class="b ac">Menor inicial</span> <span class="b ac">Menor cuota</span>.</li>
+<li><strong>Gráfico de barras</strong> del costo total por plan (verde: el mejor; naranja: Arranca).</li>
+<li><strong>Comparador</strong>: marque la casilla de 2 a 4 planes y aparece una comparación lado a lado.</li>
+<li><strong>Sin precio completo</strong>: planes a los que les falta cuota, número de cuotas o tasa (por ejemplo, los de Glik). No se pueden ordenar por costo total y se listan aparte.</li>
+<li><strong>Exportar CSV / JSON</strong> y <strong>Copiar enlace</strong>.</li>
+</ul>
+
+<h3>3.2 Evolución</h3>
+<p>Línea de tiempo de la inicial en dólares por empresa para un modelo. Toque el nombre de una empresa en la leyenda (lado derecho) para ocultarla o mostrarla. Pase el cursor o toque un punto para ver fecha y monto. Debajo, la tabla de cuotas por corte (hasta los últimos 8). Incluye datos históricos de prensa (2024 a 2026).</p>
+
+<h3>3.3 Cambios de precio</h3>
+<p>Compara cada plan con su observación anterior y muestra solo los que cambiaron. Rojo: subió. Verde: bajó. Solo compara precios en la misma moneda. Con un único corte quincenal aún no hay mucho que ver: se llena desde el segundo corte.</p>
+
+<h3>3.4 Último corte</h3>
+<p>Tabla completa de planes del último corte. Puede buscar por modelo o marca, filtrar por empresa y frecuencia, y ordenar tocando el encabezado (otro toque invierte el orden). «Ver más» carga 200 filas adicionales; «Limpiar filtros» reinicia todo. Los topes de inicial y cuota de «Mejores planes» también se aplican aquí.</p>
+
+<h3>3.5 Arranca</h3>
+<p>Muestra, por cada modelo que Arranca ofrezca, su posición en el ranking (por ejemplo «3 de 5»), su costo total, el mejor del mercado y la brecha. Mientras Arranca no tenga planes registrados, la pestaña lo dice así: el sistema no inventa cifras. Tocar una fila lleva al detalle del modelo.</p>
+
+<h3>3.6 Empresas</h3>
+<p>Ficha de cada empresa: modelo de negocio, marcas, frecuencia, plazos, gastos administrativos, cómo publica sus precios y confianza. Etiquetas: <span class="b ok">Nuevo</span> (actor incorporado hace menos de 45 días o marcado «nuevo»), <span class="b" style="color:#d9480f">Propia</span> (Arranca), <span class="b wn">Próximamente</span>. Más abajo, «Actores en observación»: empresas detectadas que todavía no publican precios.</p>
+
+<h2 id="numeros">4. Cómo se calculan los números</h2>
+<div class="tw"><table>
+<tr><th>Cifra</th><th>Fórmula</th></tr>
+<tr><td>Costo total</td><td>inicial + cuota × número de cuotas. No incluye gastos administrativos.</td></tr>
+<tr><td>Cuota mensual equivalente</td><td>cuota × 30 ÷ días entre cuotas. Semanal = 7 días, quincenal o «cada 14 días» = 14, mensual = 30.</td></tr>
+<tr><td>Brecha</td><td>(costo total del plan ÷ costo total del más barato − 1) × 100.</td></tr>
+<tr><td>Puntaje (mejor equilibrio)</td><td>Cada criterio se lleva a una escala de 0 (el mejor) a 1 (el peor) dentro del modelo y se promedia con los pesos de los deslizadores. Gana el puntaje más bajo.</td></tr>
+<tr><td>Conversión de euros</td><td>valor × tasa €→US$. Sin tasa, el plan queda «sin precio completo».</td></tr>
+</table></div>
+<p><strong>Reglas que conviene saber</strong></p>
+<ul>
+<li>Un plan entra al ranking solo si tiene inicial, cuota, número de cuotas y una frecuencia que se pueda convertir a días. Si la frecuencia es ambigua («No indicada», «Semanal / quincenal / mensual»), el plan queda fuera del ranking.</li>
+<li>La confianza viene del dato: <span class="b ok">Alta</span> (web oficial, catálogo), <span class="b wn">Media</span>, <span class="b bd">Baja</span> (histórico o desactualizado).</li>
+<li>Los modelos se agrupan por <code>modelo_clave</code>, de modo que «EK XPRESS II» y «XPRESS II» de distintas empresas se comparan entre sí.</li>
+<li>El ranking y los resúmenes usan solo el <strong>último corte</strong>. Los datos de prensa viejos se ven en Evolución y Cambios.</li>
+<li>Los planes con porcentaje (por ejemplo, un plan expresado en %) y otras monedas no entran en el ranking.</li>
+</ul>
+
+<h2 id="enlaces">5. Compartir resultados y exportar</h2>
+<p>Cada filtro queda escrito en la dirección, después del <code>#</code>. Copie el enlace y comparta. Ejemplo:</p>
+<pre><code>https://…workers.dev/#mejores?modelo=NEW%20HORSE&amp;imax=600&amp;cmax=150&amp;conf=1&amp;wt=1&amp;wc=0&amp;wi=0</code></pre>
+<div class="tw"><table>
+<tr><th>Parámetro</th><th>Significado</th></tr>
+<tr><td><code>#mejores</code>, <code>#evolucion</code>, <code>#cambios</code>, <code>#corte</code>, <code>#arranca</code>, <code>#empresas</code></td><td>Pestaña.</td></tr>
+<tr><td><code>modelo</code></td><td>Modelo elegido.</td></tr>
+<tr><td><code>imax</code>, <code>cmax</code></td><td>Inicial máxima y cuota mensual máxima en US$.</td></tr>
+<tr><td><code>conf=1</code></td><td>Solo confianza Alta/Media.</td></tr>
+<tr><td><code>eur</code></td><td>Tasa euro a dólar.</td></tr>
+<tr><td><code>wt</code>, <code>wc</code>, <code>wi</code></td><td>Pesos de costo total, cuota e inicial (0 a 1).</td></tr>
+<tr><td><code>cmp</code></td><td>Planes marcados para comparar.</td></tr>
+<tr><td><code>q</code>, <code>emp</code>, <code>frec</code>, <code>sort</code>, <code>dir</code></td><td>Búsqueda, empresa, frecuencia y orden en «Último corte».</td></tr>
+</table></div>
+<p><strong>Exportar.</strong> Los botones <em>Exportar CSV</em> y <em>Exportar JSON</em> descargan lo que está en pantalla, con los filtros aplicados. El CSV usa punto y coma como separador y codificación UTF-8 con marca BOM, por lo que Excel en español lo abre con tildes y columnas correctas. Las celdas de texto que empiezan con <code>=</code>, <code>+</code>, <code>-</code> o <code>@</code> se protegen con un apóstrofo para evitar fórmulas maliciosas.</p>
+<p><strong>RSS.</strong> <code>/feed.xml</code> publica los cambios de precio del último corte; sirve para recibirlos en un lector de noticias.</p>
+
+<h2 id="funciona">6. Cómo funciona por dentro</h2>
+<p>Es un sitio estático: no tiene servidor ni base de datos. Los datos viajan como archivos JSON y todo el cálculo (filtros, rankings, gráficos) ocurre en el navegador de quien lo abre.</p>
+<pre><code>data/cortes/AAAA-MM-DD.json   ← una lista de planes por corte (fuente de verdad)
+data/empresas.json            ← fichas de empresas (incluye Arranca)
+data/alias.json               ← nombres alternos → nombre oficial de la empresa
+data/tasas.json               ← tasas BCV por corte
+data/candidatos.json          ← actores detectados sin precios
+        │  npm run build  (scripts/build.mjs)
+        ▼
+dist/  ← sitio listo: index.html, js/, css/, data/historial.json, meta.json, feed.xml
+        │  Cloudflare Workers Builds (en cada cambio a main)
+        ▼
+https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
+<div class="tw"><table>
+<tr><th>Archivo</th><th>Función</th></tr>
+<tr><td><code>public/js/calc.js</code></td><td>Cálculos puros: normalización, costo total, ranking, cambios, posición de Arranca, CSV. Se usa en el navegador, en el build y en las pruebas.</td></tr>
+<tr><td><code>public/js/app.js</code></td><td>Pestañas, filtros, estado en la URL y tablas.</td></tr>
+<tr><td><code>public/js/charts.js</code></td><td>Gráfico de líneas y de barras (d3, incluido en el repositorio; sin servicios externos).</td></tr>
+<tr><td><code>scripts/validate.mjs</code></td><td>Revisa los datos antes de publicar.</td></tr>
+<tr><td><code>scripts/build.mjs</code></td><td>Une los cortes, calcula campos derivados y arma <code>dist/</code>.</td></tr>
+<tr><td><code>test/calc.test.mjs</code></td><td>8 pruebas automáticas de los cálculos.</td></tr>
+<tr><td><code>wrangler.toml</code></td><td>Configuración del Worker <code>prueba-arranca</code> y de la carpeta publicada (<code>dist</code>).</td></tr>
+</table></div>
+
+<h3>Campos de cada plan</h3>
+<div class="tw"><table>
+<tr><th>Campo</th><th>Descripción</th></tr>
+<tr><td><code>corte</code></td><td>Fecha del corte (AAAA-MM-DD).</td></tr>
+<tr><td><code>empresa</code>, <code>marca</code>, <code>modelo</code>, <code>modelo_clave</code>, <code>plan</code></td><td>Quién, qué moto y qué plan (por ejemplo «26 cuotas · Cada 14 días»). <code>modelo_clave</code> es el nombre unificado para comparar.</td></tr>
+<tr><td><code>inicial</code>, <code>cuota</code>, <code>n_cuotas</code></td><td>Números, o <code>null</code> si no se publicó. Con <code>null</code>, usar <code>inicial_txt</code> / <code>cuota_txt</code> (por ejemplo «Desde 120»).</td></tr>
+<tr><td><code>moneda</code>, <code>frecuencia</code></td><td>Texto tal como lo publica la empresa; el sistema lo normaliza (USD, EUR, otra; 7, 14 o 30 días).</td></tr>
+<tr><td><code>fuente</code>, <code>url</code>, <code>fecha_dato</code>, <code>confianza</code>, <code>nota</code></td><td>De dónde salió el dato, cuándo y con cuánta certeza. Si la fuente empieza con «Prensa», el dato se trata como histórico.</td></tr>
+</table></div>
+
+<h2 id="quincena">7. Actualización quincenal (días 1 y 16)</h2>
+<p>Cada corte se agrega como un archivo nuevo y se publica por <em>pull request</em> (PR) en GitHub. Pasos:</p>
+<ol>
+<li><strong>Recolectar precios</strong> de cada empresa de <code>data/empresas.json</code>: webs oficiales, simulador de Chekia, Instagram, prensa. Una fila por plan. Si un dato no se pudo confirmar, <code>confianza: "Baja"</code> y una nota que lo explique.</li>
+<li><strong>Buscar nuevos actores</strong> del mercado. Con precios publicados: añadir su ficha a <code>data/empresas.json</code> con <code>"estado": "nuevo"</code> y <code>"alta": "AAAA-MM-DD"</code>, y sus planes al corte. Sin precios: añadirlos a <code>data/candidatos.json</code>.</li>
+<li><strong>Arranca.</strong> Cuando tenga planes, incluirlos con <code>"empresa": "Arranca"</code> y cambiar su ficha de <code>"próximamente"</code> a <code>"activo"</code>. Nunca estimar ni inventar cifras.</li>
+<li><strong>Tasas BCV.</strong> Añadir la entrada del corte en <code>data/tasas.json</code> (<code>usd_ves</code>, <code>eur_ves</code>, <code>eur_usd</code>, <code>fuente</code>). Con <code>eur_usd</code>, los planes en euros entran al ranking.</li>
+<li><strong>Crear</strong> <code>data/cortes/AAAA-MM-DD.json</code> con la fecha del corte.</li>
+<li><strong>Verificar</strong> con <code>npm run validate</code> y <code>npm test</code>; revisar las advertencias.</li>
+<li><strong>Abrir el PR</strong> contra <code>main</code> con un resumen: cambios de precio, nuevos actores, advertencias explicadas. Al <strong>unirlo</strong> (Merge), Cloudflare publica solo en 1 a 3 minutos.</li>
+</ol>
+<div class="note">El procedimiento completo está también en <code>docs/ACTUALIZACION.md</code> del repositorio. Si pasan más de 17 días sin un corte nuevo, GitHub avisa por correo (flujo «Frescura de datos», los días 4 y 19).</div>
+
+<h2 id="validacion">8. Validación de datos</h2>
+<p><code>npm run validate</code> corre en cada PR y en cada publicación. Los <strong>errores</strong> detienen el proceso; las <strong>advertencias</strong> piden revisión humana pero no lo detienen.</p>
+<div class="tw"><table>
+<tr><th class="bd">Errores (bloquean)</th><th class="wn">Advertencias (revisar)</th></tr>
+<tr><td>
+<ul>
+<li>Falta un campo obligatorio.</li>
+<li>Fecha de corte inválida o en el futuro.</li>
+<li>Inicial, cuota o n° de cuotas negativos o que no son número.</li>
+<li>URL que no empieza por http o https.</li>
+<li>Plan repetido dentro del mismo corte.</li>
+<li>Un alias apunta a una empresa inexistente.</li>
+</ul></td><td>
+<ul>
+<li>Plan sin precio ni texto de precio.</li>
+<li>Empresa sin ficha en <code>empresas.json</code>.</li>
+<li>Intervalo entre cortes fuera de 10 a 20 días.</li>
+<li>Menos del 70 % de los planes del corte anterior.</li>
+<li>Una empresa desaparece del corte.</li>
+<li>Inicial o cuota que varía más de 40 %.</li>
+<li>Más de la mitad del corte con confianza Baja.</li>
+</ul></td></tr>
+</table></div>
+<p>Una variación grande no siempre es un error (puede ser una promoción real), pero hay que confirmarla con la fuente antes de unir el PR.</p>
+
+<h2 id="despliegue">9. Publicación en Cloudflare</h2>
+<ul>
+<li>El sitio se sirve como <strong>Cloudflare Worker con activos estáticos</strong> (nombre: <code>prueba-arranca</code>), en la red global de Cloudflare. El plan gratuito alcanza para consultas frecuentes.</li>
+<li>La integración Git de <strong>Workers Builds</strong> construye y publica cada vez que cambia la rama <code>main</code>.</li>
+<li>Ajustes en Cloudflare (<strong>Workers &amp; Pages → prueba-arranca → Settings → Build</strong>):
+<ul>
+<li>Production branch: <code>main</code></li>
+<li>Build command: <code>npm ci &amp;&amp; npm run validate &amp;&amp; npm test &amp;&amp; npm run build</code></li>
+<li>Deploy command: <code>npx wrangler deploy</code></li>
+</ul></li>
+<li>Historial y registros: <strong>Deployments</strong> muestra cada versión; «Latest build» abre el log. Para volver a una versión anterior, use el menú «…» de esa versión.</li>
+<li>Dirección propia: en <strong>Domains &amp; Routes</strong> puede agregar un dominio cuando lo tenga.</li>
+<li>Seguridad: las cabeceras (<code>public/_headers</code>) bloquean scripts externos y fijan una política estricta. Los datos tienen caché de 5 minutos.</li>
+</ul>
+
+<h2 id="problemas">10. Solución de problemas</h2>
+<div class="tw"><table>
+<tr><th>Síntoma</th><th>Causa probable y solución</th></tr>
+<tr><td>El build falla con «Could not detect a directory containing static files»</td><td>El Build command está vacío o es <code>npx wrangler deploy</code>. Debe ser el comando de construcción de la sección 9.</td></tr>
+<tr><td>El build falla en <code>npm run validate</code></td><td>Hay un error de datos. Lea el log: indica la fila y el motivo. Corrija el archivo en <code>data/cortes/</code> y haga un nuevo PR.</td></tr>
+<tr><td>El build falla en <code>npm test</code></td><td>Un cambio en <code>calc.js</code> rompió un cálculo. Revise la prueba que falla.</td></tr>
+<tr><td>La página dice «No se pudieron cargar los datos»</td><td>No existe <code>dist/data/*.json</code> en el último despliegue, o falló la conexión. Pulse «Reintentar»; si persiste, revise el último build.</td></tr>
+<tr><td>No hay dirección pública</td><td>Active <strong>workers.dev</strong> en Domains &amp; Routes.</td></tr>
+<tr><td>Un modelo no aparece en «Mejores planes»</td><td>Ningún plan suyo tiene inicial, cuota, n° de cuotas y frecuencia convertibles. Búsquelo en «Último corte».</td></tr>
+<tr><td>Glik no aparece en el ranking</td><td>Falta la tasa euro a dólar y sus planes no publican cuota. Escriba la tasa en el campo «€ → US$» o regístrela en <code>data/tasas.json</code>.</td></tr>
+<tr><td>«Cambios de precio» está casi vacío</td><td>Normal con un solo corte quincenal. Se llena desde el segundo corte.</td></tr>
+<tr><td>Los datos dicen «hace 20+ días» en ámbar</td><td>Falta el corte quincenal. Ver sección 7.</td></tr>
+</table></div>
+
+<h2 id="glosario">11. Glosario</h2>
+<div class="tw"><table>
+<tr><th>Término</th><th>Significado</th></tr>
+<tr><td>Arrendamiento con opción a compra</td><td>Se paga por usar la moto y, al terminar los pagos, se traspasa a su nombre.</td></tr>
+<tr><td>Corte</td><td>Fotografía quincenal de los precios publicados.</td></tr>
+<tr><td>Inicial</td><td>Pago de entrada.</td></tr>
+<tr><td>Cuota / canon</td><td>Pago periódico (semanal, quincenal o mensual).</td></tr>
+<tr><td>Costo total</td><td>Inicial más todas las cuotas.</td></tr>
+<tr><td>Brecha</td><td>Porcentaje por encima del plan más barato del mismo modelo.</td></tr>
+<tr><td>BCV</td><td>Banco Central de Venezuela; fuente de las tasas de cambio.</td></tr>
+<tr><td>PR (pull request)</td><td>Propuesta de cambio en GitHub; al unirla (Merge) pasa a producción.</td></tr>
+<tr><td>Worker</td><td>Aplicación alojada en Cloudflare; aquí sirve el sitio estático.</td></tr>
+<tr><td>Actor</td><td>Empresa que ofrece planes de moto a cuotas.</td></tr>
+</table></div>
+
+<p class="lead" style="margin-top:2rem">Repositorio: <a href="https://github.com/9377868-jcmm/Prueba-Arranca">github.com/9377868-jcmm/Prueba-Arranca</a></p>
+</div>
+</body>
+</html>
