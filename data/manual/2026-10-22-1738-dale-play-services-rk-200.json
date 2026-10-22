@@ -1,0 +1,30 @@
+[
+ {
+  "v": 1,
+  "registrado_por": "Ricardo",
+  "registrado": "2026-10-22",
+  "motivo": "sin_publicar",
+  "fuente": "Asesor vía ws.",
+  "url": "",
+  "fecha_dato": "2026-10-22",
+  "tipo": "precio",
+  "confianza": "Media",
+  "vence": "2026-11-21",
+  "nota": "",
+  "nuevo": "plan",
+  "plan": {
+   "empresa": "Dale Play Services",
+   "marca": "Empire Keeway",
+   "modelo": "RK 200",
+   "modelo_clave": "RK 200",
+   "plan": "24 cuotas · Quincenal",
+   "inicial": 600,
+   "inicial_txt": "",
+   "cuota": 102,
+   "cuota_txt": "",
+   "moneda": "€ (manual)",
+   "frecuencia": "Quincenal",
+   "n_cuotas": 24
+  }
+ }
+]
