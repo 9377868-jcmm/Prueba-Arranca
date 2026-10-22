@@ -138,9 +138,15 @@ export function vCargar(el, D, opciones = {}) {
     const kids = [h('p', {class: 'note'}, `${resultados.length} filas leídas: ${resumen.ok} correctas, ${resumen.aviso} con aviso, ${resumen.error} con error, ${resumen.sin_cambio} sin cambios.`)];
     if (resumen.sobran) kids.push(alerta(`El archivo tiene ${resumen.sobran} filas de más: el máximo es ${MAX_FILAS} por envío. Divida el archivo.`));
     if (!quien) kids.push(alerta('Escriba su nombre en "Registrado por".'));
-    kids.push(h('div', {class: 'tw', role: 'region', 'aria-label': 'Revisión del archivo', tabindex: 0}, h('table', {}, h('thead', {}, h('tr', {}, ['Fila', 'Estado', 'Plan', 'Mensajes'].map((t) => h('th', {scope: 'col'}, t)))),
-      h('tbody', {}, resultados.map((r) => h('tr', {}, h('td', {class: 'n'}, r.n), h('td', {}, h('span', {class: 'badge ' + ETIQUETA[r.estado][1]}, ETIQUETA[r.estado][0])), h('td', {}, r.etiqueta || '—'),
-        h('td', {}, ...r.errores.map((t) => h('div', {class: 'bd'}, t)), ...r.avisos.map((t) => h('div', {class: 'wn'}, t)))))))));
+    // Primero lo que requiere atención (errores, avisos, correctas); las filas sin cambios quedan plegadas.
+    const orden = {error: 0, aviso: 1, ok: 2};
+    const relevantes = resultados.filter((r) => r.estado !== 'sin_cambio').sort((x, y) => orden[x.estado] - orden[y.estado] || x.n - y.n);
+    const iguales = resultados.filter((r) => r.estado === 'sin_cambio');
+    const tablaFilas = (lista, etiqueta) => h('div', {class: 'tw', role: 'region', 'aria-label': etiqueta, tabindex: 0}, h('table', {}, h('thead', {}, h('tr', {}, ['Fila', 'Estado', 'Plan', 'Mensajes'].map((t) => h('th', {scope: 'col'}, t)))),
+      h('tbody', {}, lista.map((r) => h('tr', {}, h('td', {class: 'n'}, r.n), h('td', {}, h('span', {class: 'badge ' + ETIQUETA[r.estado][1]}, ETIQUETA[r.estado][0])), h('td', {}, r.etiqueta || '—'),
+        h('td', {}, ...r.errores.map((t) => h('div', {class: 'bd'}, t)), ...r.avisos.map((t) => h('div', {class: 'wn'}, t))))))));
+    if (relevantes.length) kids.push(tablaFilas(relevantes, 'Filas que cambian o tienen problemas'));
+    if (iguales.length) kids.push(h('details', {}, h('summary', {}, `Ver las ${iguales.length} filas sin cambios (se ignoran)`), tablaFilas(iguales, 'Filas sin cambios')));
     if (resumen.error) kids.push(h('div', {class: 'ctrls'}, h('button', {class: 'b', type: 'button', onclick: () => descargar('filas-con-error.csv', aCSV(resultados.filter((r) => r.estado === 'error').map((r) => ({fila: r.n, plan: r.etiqueta, mensajes: r.errores.join(' | ')})),
       [{k: 'fila', t: 'Fila'}, {k: 'plan', t: 'Plan'}, {k: 'mensajes', t: 'Mensajes'}]), 'text/csv;charset=utf-8')}, 'Descargar informe de errores')));
     if (validas.length) {

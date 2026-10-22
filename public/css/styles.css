@@ -79,3 +79,5 @@ button.b.boton{background:var(--acc);color:var(--bg);border-color:var(--acc);fon
 button.b:disabled{opacity:.45;cursor:not-allowed}
 .resultado:empty{display:none}
 .bd{color:var(--bad)}.wn{color:var(--warn)}
+.campo input[type=checkbox],.cf input[type=checkbox]{width:auto;min-height:0;flex:none}
+.campo .cf.chk{min-height:2rem;margin-top:.25rem}
