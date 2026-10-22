@@ -8,10 +8,10 @@
    "fuente": "Finanzas Digital, tasa BCV del 19-oct-2026 (fuente secundaria; verificar en bcv.org.ve)"
   },
   "2026-10-20": {
-   "usd_ves": null,
-   "eur_ves": null,
+   "usd_ves": 881.87,
+   "eur_ves": 988.97,
    "eur_usd": null,
-   "fuente": "BCV"
+   "fuente": "BCV del 20-oct-2026 según Meridiano (dólar y euro); el dólar coincide con La Iguana y El Estímulo. Fuentes secundarias: verificar en bcv.org.ve"
   },
   "2026-10-22": {
    "usd_ves": 884.75,
