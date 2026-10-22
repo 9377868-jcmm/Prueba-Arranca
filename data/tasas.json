@@ -1,11 +1,23 @@
 {
  "_nota": "Tasas BCV por corte. La rutina quincenal agrega una entrada por corte; null = sin dato.",
  "cortes": {
-  "2026-10-20": {
-   "usd_ves": null,
-   "eur_ves": null,
+  "2026-10-19": {
+   "usd_ves": 881.0664,
+   "eur_ves": 991.16445734,
    "eur_usd": null,
-   "fuente": "BCV"
+   "fuente": "Finanzas Digital, tasa BCV del 19-oct-2026 (fuente secundaria; verificar en bcv.org.ve)"
+  },
+  "2026-10-20": {
+   "usd_ves": 881.87,
+   "eur_ves": 988.97,
+   "eur_usd": null,
+   "fuente": "BCV del 20-oct-2026 según Meridiano (dólar y euro); el dólar coincide con La Iguana y El Estímulo. Fuentes secundarias: verificar en bcv.org.ve"
+  },
+  "2026-10-22": {
+   "usd_ves": 884.75,
+   "eur_ves": 993.77,
+   "eur_usd": null,
+   "fuente": "BCV del 22-oct-2026, informado por el dueño del monitor"
   }
  }
 }

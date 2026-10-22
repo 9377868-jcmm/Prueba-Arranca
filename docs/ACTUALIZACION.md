@@ -8,7 +8,8 @@ Procedimiento para la rutina programada. Todo se hace por PR; el CI valida y el 
    - Sin precios: agregar a `data/candidatos.json` (`nombre`, `detectado`, `nota`, `fuente`, `url`).
    - Listarlos en el cuerpo del PR bajo "Nuevos actores".
 3. **Arranca.** Si Arranca ya tiene planes publicados, incluirlos con `"empresa": "Arranca"` (la ficha ya existe con `propia: true`; pasar su `estado` a `"activo"` y completar los campos). Nunca inventar cifras.
-4. **Tasas BCV.** Agregar la entrada del corte en `data/tasas.json` (`usd_ves`, `eur_ves`, `eur_usd`, `fuente`). Con `eur_usd` los planes en € (Glik) entran al ranking.
+4. **Tasas BCV.** Agregar la entrada del corte en `data/tasas.json` con `usd_ves` y `eur_ves` del BCV y la `fuente`; la tasa €→US$ se calcula sola (euro ÷ dólar). Con ella entran al ranking los planes con la cuota (o la inicial) en €.
+   **Monedas.** En cada fila registrar `moneda_inicial` y `moneda_cuota` (`USD` o `EUR`); suelen ser distintas (inicial en US$, cuota en €). `data/monedas.json` solo guarda el valor por defecto de cada empresa para datos que no lo traigan.
 5. Escribir `data/cortes/AAAA-MM-DD.json` (fecha del corte).
    - Revisar `data/manual/`: los datos cargados a mano vencen a los 30 días o cuando el corte real trae el mismo plan; retirar los que ya no hagan falta y avisar de los que sigan vigentes.
    - Las marcas nuevas o con otro nombre se unifican en `data/marcas.json` (variante -> marca canónica; `null` = sin marca).

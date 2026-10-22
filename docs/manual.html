@@ -124,7 +124,7 @@ th{background:var(--panel)}
 <p>Sirve para registrar a mano un precio cuando una empresa no publicó a tiempo o su información no se puede consultar en línea, para crear una empresa nueva o un modelo/plan nuevo. No hace falta tocar archivos: el formulario prepara todo y abre GitHub.</p>
 <ol>
 <li>Elija el tipo: <em>Actualizar o añadir precio</em>, <em>Empresa nueva</em> o <em>Retirar un dato manual</em>.</li>
-<li><strong>Precio</strong>: escriba la empresa y el modelo (se autocompletan). Elija un plan existente para cambiar su precio, o «Plan nuevo…» e indique n.º de cuotas y frecuencia. Si el modelo no existe, queda registrado como modelo nuevo. Complete marca, inicial, cuota y moneda.</li>
+<li><strong>Precio</strong>: escriba la empresa y el modelo (se autocompletan). Elija un plan existente para cambiar su precio, o «Plan nuevo…» e indique n.º de cuotas y frecuencia. Si el modelo no existe, queda registrado como modelo nuevo. Complete marca, inicial y cuota, y elija <strong>la moneda de la inicial</strong> (por defecto US$) y <strong>la moneda de la cuota</strong> (por defecto €). La vista previa muestra cuánto es en US$ y con qué tasa.</li>
 <li>Indique motivo, fecha en que vio el dato, <strong>fuente obligatoria</strong> (quién se lo dijo o dónde lo vio, y dónde guardó la captura) y confianza. «Alta» exige un enlace de respaldo.</li>
 <li>Revise los mensajes: los <span class="b bd">errores</span> bloquean el envío; los avisos (por ejemplo, variación mayor a 40 % frente al último corte) piden cuidado. El formulario muestra el costo total y en qué puesto quedaría el plan en el ranking del modelo.</li>
 <li>Pulse <strong>Abrir en GitHub</strong>. Se abre la página de crear archivo con el contenido listo. Elija «Create a new branch for this commit and start a pull request» y pulse «Commit». Al unir ese PR, el sitio se actualiza solo. (Si el enlace resulta muy largo, el botón copia el contenido y abre GitHub para pegarlo.)</li>
@@ -142,10 +142,12 @@ th{background:var(--panel)}
 <tr><td>Cuota mensual equivalente</td><td>cuota × 30 ÷ días entre cuotas. Semanal = 7 días, quincenal o «cada 14 días» = 14, mensual = 30.</td></tr>
 <tr><td>Brecha</td><td>(costo total del plan ÷ costo total del más barato − 1) × 100.</td></tr>
 <tr><td>Puntaje (mejor equilibrio)</td><td>Cada criterio se lleva a una escala de 0 (el mejor) a 1 (el peor) dentro del modelo y se promedia con los pesos de los deslizadores. Gana el puntaje más bajo.</td></tr>
-<tr><td>Conversión de euros</td><td>valor × tasa €→US$. Sin tasa, el plan queda «sin precio completo».</td></tr>
+<tr><td>Conversión de euros</td><td>valor × tasa €→US$, componente por componente. Sin tasa, el plan queda «sin precio completo».</td></tr>
+<tr><td>Tasa €→US$</td><td>euro en bolívares ÷ dólar en bolívares (BCV) del corte. Si ese corte no tiene tasa, se usa la más reciente anterior; nunca una posterior. Usted puede escribir otra en los filtros y esa manda.</td></tr>
 </table></div>
 <p><strong>Reglas que conviene saber</strong></p>
 <ul>
+<li><strong>Moneda de la inicial y de la cuota.</strong> Cada plan guarda la moneda de cada componente (por ejemplo, inicial en US$ y cuota en €). Todo se compara en US$, y lo que estaba en euros se marca con la etiqueta <span class="b ac">convertido</span>, con el monto original y la tasa usada debajo (al pasar el cursor se ve de dónde sale la tasa). Sin la etiqueta, el monto se publicó en US$. Las exportaciones traen las dos monedas, la tasa y si hubo conversión.</li>
 <li>Un plan entra al ranking solo si tiene inicial, cuota, número de cuotas y una frecuencia que se pueda convertir a días. Si la frecuencia es ambigua («No indicada», «Semanal / quincenal / mensual»), el plan queda fuera del ranking.</li>
 <li>La confianza viene del dato: <span class="b ok">Alta</span> (web oficial, catálogo), <span class="b wn">Media</span>, <span class="b bd">Baja</span> (histórico o desactualizado).</li>
 <li>Los modelos se agrupan por <code>modelo_clave</code>, de modo que «EK XPRESS II» y «XPRESS II» de distintas empresas se comparan entre sí.</li>
@@ -182,6 +184,7 @@ data/alias.json               ← nombres alternos → nombre oficial de la empr
 data/tasas.json               ← tasas BCV por corte
 data/candidatos.json          ← actores detectados sin precios
 data/marcas.json              ← variantes de marca → marca canónica
+data/monedas.json             ← moneda por defecto de inicial y cuota, por empresa
 data/manual/*.json            ← datos cargados a mano (capa aparte, con vencimiento)
         │  npm run build  (scripts/build.mjs)
         ▼
@@ -206,6 +209,7 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <tr><td><code>corte</code></td><td>Fecha del corte (AAAA-MM-DD).</td></tr>
 <tr><td><code>empresa</code>, <code>marca</code>, <code>modelo</code>, <code>modelo_clave</code>, <code>plan</code></td><td>Quién, qué moto y qué plan (por ejemplo «26 cuotas · Cada 14 días»). <code>modelo_clave</code> es el nombre unificado para comparar.</td></tr>
 <tr><td><code>inicial</code>, <code>cuota</code>, <code>n_cuotas</code></td><td>Números, o <code>null</code> si no se publicó. Con <code>null</code>, usar <code>inicial_txt</code> / <code>cuota_txt</code> (por ejemplo «Desde 120»).</td></tr>
+<tr><td><code>moneda_inicial</code>, <code>moneda_cuota</code></td><td><code>USD</code> o <code>EUR</code> para cada componente. Si un dato no los trae, se toma el valor por defecto de la empresa en <code>data/monedas.json</code> y, si tampoco está, la moneda única del dato original.</td></tr>
 <tr><td><code>moneda</code>, <code>frecuencia</code></td><td>Texto tal como lo publica la empresa; el sistema lo normaliza (USD, EUR, otra; 7, 14 o 30 días).</td></tr>
 <tr><td><code>fuente</code>, <code>url</code>, <code>fecha_dato</code>, <code>confianza</code>, <code>nota</code></td><td>De dónde salió el dato, cuándo y con cuánta certeza. Si la fuente empieza con «Prensa», el dato se trata como histórico.</td></tr>
 </table></div>
@@ -216,7 +220,8 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <li><strong>Recolectar precios</strong> de cada empresa de <code>data/empresas.json</code>: webs oficiales, simulador de Chekia, Instagram, prensa. Una fila por plan. Si un dato no se pudo confirmar, <code>confianza: "Baja"</code> y una nota que lo explique.</li>
 <li><strong>Buscar nuevos actores</strong> del mercado. Con precios publicados: añadir su ficha a <code>data/empresas.json</code> con <code>"estado": "nuevo"</code> y <code>"alta": "AAAA-MM-DD"</code>, y sus planes al corte. Sin precios: añadirlos a <code>data/candidatos.json</code>.</li>
 <li><strong>Arranca.</strong> Cuando tenga planes, incluirlos con <code>"empresa": "Arranca"</code> y cambiar su ficha de <code>"próximamente"</code> a <code>"activo"</code>. Nunca estimar ni inventar cifras.</li>
-<li><strong>Tasas BCV.</strong> Añadir la entrada del corte en <code>data/tasas.json</code> (<code>usd_ves</code>, <code>eur_ves</code>, <code>eur_usd</code>, <code>fuente</code>). Con <code>eur_usd</code>, los planes en euros entran al ranking.</li>
+<li><strong>Tasas BCV.</strong> Añadir la entrada del corte en <code>data/tasas.json</code> con <code>usd_ves</code> y <code>eur_ves</code> del BCV y la <code>fuente</code>; la tasa €→US$ se calcula sola (euro ÷ dólar). Con ella, los planes con la cuota en euros entran al ranking.</li>
+<li><strong>Monedas.</strong> En cada plan nuevo registrar <code>moneda_inicial</code> y <code>moneda_cuota</code> (<code>USD</code> o <code>EUR</code>), porque suelen ser distintas.</li>
 <li><strong>Crear</strong> <code>data/cortes/AAAA-MM-DD.json</code> con la fecha del corte.</li>
 <li><strong>Revisar <code>data/manual/</code></strong>: retirar (o dejar vencer) los datos manuales que el nuevo corte ya cubre, y confirmar los que sigan siendo necesarios.</li>
 <li><strong>Verificar</strong> con <code>npm run validate</code> y <code>npm test</code>; revisar las advertencias.</li>
