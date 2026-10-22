@@ -1,6 +1,6 @@
 // Pestaña "Cargar dato": arma una entrada manual, la valida y abre GitHub con el archivo listo para crear.
 import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, convertir, aCSV, hoyISO, sumaDias, SIMBOLO} from './calc.js';
-import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, urlGitHub} from './manual-core.js';
+import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, nombreArchivoLote, urlGitHub} from './manual-core.js';
 import {h, fmtN, fmtT, fmtUsd, fmtD, descargar} from './format.js';
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento: no pasa nada */ } };
@@ -71,7 +71,7 @@ export function vCargar(el, D, opciones = {}) {
     document.getElementById('dl-mod').replaceChildren(...[...new Set((cEmpresa.value.trim() ? reales.filter((r) => r.empresa === cEmpresa.value.trim()) : reales).map((r) => r.modelo_clave))].sort().map((v) => h('option', {value: v})));
   }
 
-  const comunes = () => ({v: 1, registrado_por: cQuien.value.trim(), registrado: hoy, motivo: cMotivo.value, fuente: cFuente.value.trim(), url: cUrl.value.trim(), fecha_dato: cFecha.value});
+  const comunes = () => ({v: 1, registrado_por: cQuien.value.trim() || (remoto ? 'por código' : ''), registrado: hoy, motivo: cMotivo.value, fuente: cFuente.value.trim(), url: cUrl.value.trim(), fecha_dato: cFecha.value});
   const numero = (c) => (c.value === '' ? null : Number(c.value));
 
   function construir() {
@@ -99,7 +99,53 @@ export function vCargar(el, D, opciones = {}) {
     return {...k, tipo: 'retiro', id: cRetiro.value};
   }
 
+  // ---- envío: sin GitHub (con código personal) o con GitHub
+  let remoto = false;
+  const cCodigo = inp('password', {value: leer('mx-codigo'), placeholder: 'Su código personal', autocomplete: 'off'});
+  const cRecordar = h('input', {type: 'checkbox', checked: Boolean(leer('mx-codigo'))});
+  const resultado = h('div', {class: 'resultado', 'aria-live': 'polite'});
+  const alerta = (t) => h('p', {class: 'warn', role: 'alert'}, t);
+
+  async function enviar(entradas) {
+    const codigo = cCodigo.value.trim();
+    if (codigo.length < 8) { resultado.replaceChildren(alerta('Escriba su código personal.')); return; }
+    guardar('mx-codigo', cRecordar.checked ? codigo : '');
+    resultado.replaceChildren(h('p', {class: 'note'}, 'Enviando…'));
+    let r, j = {};
+    try {
+      r = await fetch('api/cargar', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({codigo, entradas})});
+      j = await r.json().catch(() => ({}));
+    } catch { resultado.replaceChildren(alerta('No hay conexión con el sitio. Intente de nuevo.')); return; }
+    if (r.ok) {
+      const seguro = /^https:\/\/github\.com\//.test(j.url || '');
+      resultado.replaceChildren(h('div', {class: 'note'}, h('strong', {}, `Enviado: ${j.enviados} ${j.enviados === 1 ? 'dato' : 'datos'}. `), 'Solicitud ', seguro ? h('a', {href: j.url, target: '_blank', rel: 'noopener noreferrer'}, '#' + j.numero) : '#' + j.numero,
+        ' pendiente de revisión. Aparecerá en el sitio unos minutos después de aprobarse.'),
+        ...(j.avisos?.length ? [h('ul', {class: 'note'}, j.avisos.flatMap((a) => a.avisos.map((t) => h('li', {}, `Fila ${a.indice + 1}: ${t}`))))] : []));
+    } else if (r.status === 422) {
+      resultado.replaceChildren(h('div', {class: 'warn', role: 'alert'}, h('strong', {}, 'Hay datos que no pasan la validación:'), h('ul', {}, (j.errores || []).flatMap((x) => x.errores.map((t) => h('li', {}, `Fila ${x.indice + 1}: ${t}`))))));
+    } else resultado.replaceChildren(alerta(j.error || 'No se pudo enviar. Intente de nuevo.'));
+  }
+
+  // Botones de envío para una o varias entradas ya validadas.
+  function panelEnvio(entradas, ok) {
+    const archivo = entradas.length === 1 ? nombreArchivo(entradas[0]) : nombreArchivoLote(entradas);
+    const u = urlGitHub(archivo, entradas);
+    const enlace = h('a', {class: 'b' + (remoto ? '' : ' boton') + (ok ? '' : ' off'), href: ok ? (u.larga ? u.vacia : u.url) : null, target: '_blank', rel: 'noopener noreferrer', 'aria-disabled': ok ? false : 'true',
+      onclick: ok && u.larga ? () => { navigator.clipboard && navigator.clipboard.writeText(u.json); } : null}, u.larga ? 'Copiar JSON y abrir GitHub' : 'Abrir en GitHub');
+    const copiar = h('button', {class: 'b', type: 'button', disabled: !ok, onclick: (ev) => { navigator.clipboard && navigator.clipboard.writeText(u.json); ev.target.textContent = '¡Copiado!'; setTimeout(() => { ev.target.textContent = 'Copiar JSON'; }, 1800); }}, 'Copiar JSON');
+    const github = [h('div', {class: 'ctrls'}, enlace, copiar), h('p', {class: 'note'}, 'En GitHub elija "Create a new branch for this commit and start a pull request" y pulse "Commit". Al unir el PR, el sitio se actualiza solo.')];
+    const nodos = [h('details', {}, h('summary', {}, `Ver el archivo que se creará (${archivo})`), h('pre', {}, h('code', {}, u.json)))];
+    if (!remoto) return [...nodos, ...github];
+    cCodigo.id = 'f-codigo';
+    return [...nodos,
+      h('div', {class: 'campo'}, h('label', {for: 'f-codigo'}, 'Su código personal'), cCodigo, h('label', {class: 'cf chk'}, cRecordar, h('span', {}, 'Recordar en este dispositivo'))),
+      h('div', {class: 'ctrls'}, h('button', {class: 'b boton', type: 'button', disabled: !ok, onclick: () => enviar(entradas)}, entradas.length === 1 ? 'Enviar para revisión' : `Enviar ${entradas.length} filas para revisión`)),
+      resultado, h('p', {class: 'note'}, 'Se crea una solicitud que el administrador revisa antes de publicarla.'),
+      h('details', {}, h('summary', {}, 'Tengo acceso a GitHub: crear el archivo yo mismo'), ...github)];
+  }
+
   function actualizar() {
+    resultado.replaceChildren();
     guardar('mx-quien', cQuien.value);
     const e = construir();
     const {errores, avisos} = validarEntrada(e, ctx());
@@ -120,15 +166,7 @@ export function vCargar(el, D, opciones = {}) {
         pos >= 0 ? `Quedaría en el puesto ${pos + 1} de ${ranking.length} para ${f.modelo_clave}.` : 'No entra al ranking (falta cuota, n.° de cuotas o tasa del euro).');
       kids.push(h('p', {class: 'note'}, lineas.join(' ')));
     }
-    const archivo = nombreArchivo(e);
-    const u = urlGitHub(archivo, [e]);
-    kids.push(h('details', {}, h('summary', {}, `Ver el archivo que se creará (${archivo})`), h('pre', {}, h('code', {}, u.json))));
-    const ok = !errores.length;
-    const enlace = h('a', {class: 'b boton' + (ok ? '' : ' off'), href: ok ? (u.larga ? u.vacia : u.url) : null, target: '_blank', rel: 'noopener noreferrer', 'aria-disabled': ok ? false : 'true',
-      onclick: ok && u.larga ? () => { navigator.clipboard && navigator.clipboard.writeText(u.json); } : null}, u.larga ? 'Copiar JSON y abrir GitHub' : 'Abrir en GitHub');
-    const copiar = h('button', {class: 'b', type: 'button', disabled: !ok, onclick: (ev) => { navigator.clipboard && navigator.clipboard.writeText(u.json); ev.target.textContent = '¡Copiado!'; setTimeout(() => { ev.target.textContent = 'Copiar JSON'; }, 1800); }}, 'Copiar JSON');
-    kids.push(h('div', {class: 'ctrls'}, enlace, copiar));
-    kids.push(h('p', {class: 'note'}, 'En GitHub elija "Create a new branch for this commit and start a pull request" y pulse "Commit". Al unir el PR, el sitio se actualiza solo.'));
+    kids.push(...panelEnvio([e], !errores.length));
     salida.replaceChildren(...kids);
   }
 
@@ -204,4 +242,5 @@ export function vCargar(el, D, opciones = {}) {
     dl('dl-emp', empresas), h('datalist', {id: 'dl-mod'}), dl('dl-marca', marcasLista), barra, cuerpo, salida), historial);
   refrescarPlanes();
   dibujar();
+  fetch('api/estado').then((r) => r.json()).then((j) => { if (j.habilitado) { remoto = true; actualizar(); } }).catch(() => {});
 }

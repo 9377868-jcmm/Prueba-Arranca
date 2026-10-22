@@ -74,3 +74,7 @@ a.b.boton.off{opacity:.45;pointer-events:none}
 #filtros-n{margin-left:.35rem}
 
 .badge.c{color:var(--acc)}
+
+button.b.boton{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600}
+button.b:disabled{opacity:.45;cursor:not-allowed}
+.resultado:empty{display:none}
