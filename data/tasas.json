@@ -12,6 +12,12 @@
    "eur_ves": null,
    "eur_usd": null,
    "fuente": "BCV"
+  },
+  "2026-10-22": {
+   "usd_ves": 884.75,
+   "eur_ves": 993.77,
+   "eur_usd": null,
+   "fuente": "BCV del 22-oct-2026, informado por el dueño del monitor"
   }
  }
 }
