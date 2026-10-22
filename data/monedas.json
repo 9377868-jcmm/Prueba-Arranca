@@ -1,3 +1,11 @@
 {
- "_nota": "Moneda por defecto de la inicial y de la cuota por empresa, para los datos que no la traen explícita (valores: USD o EUR). Lo que no aparece aquí se toma de la moneda única del dato original. Ejemplo: \"Empresa\": {\"inicial\": \"USD\", \"cuota\": \"EUR\"}"
+ "_nota": "Moneda por defecto de la inicial y de la cuota por empresa, para los datos que no la traen explícita (valores: USD o EUR). Lo que no aparece aquí se toma de la moneda única del dato original. Ejemplo: \"Empresa\": {\"inicial\": \"USD\", \"cuota\": \"EUR\"}",
+ "Chekia": {
+  "inicial": "USD",
+  "cuota": "EUR"
+ },
+ "Dale Play Services": {
+  "inicial": "USD",
+  "cuota": "EUR"
+ }
 }

@@ -47,7 +47,7 @@ if (n >= 1) {
 }
 // Planes con un componente en € cuyo corte no tiene tasa: no se pueden convertir a US$ ni entrar al ranking.
 const sinTasa = new Map();
-[...rows, ...manual.entradas.filter((e) => e.tipo === 'precio').map((e) => e.fila)].filter((r) => (r.moneda_inicial === 'EUR' || r.moneda_cuota === 'EUR') && !tasaDe(r.corte, {porCorte})).forEach((r) => sinTasa.set(r.corte, (sinTasa.get(r.corte) || 0) + 1));
+[...rows, ...manual.entradas.filter((e) => e.tipo === 'precio').map((e) => e.fila)].filter((r) => r.origen !== 'prensa' && (r.moneda_inicial === 'EUR' || r.moneda_cuota === 'EUR') && !tasaDe(r.corte, {porCorte})).forEach((r) => sinTasa.set(r.corte, (sinTasa.get(r.corte) || 0) + 1));
 sinTasa.forEach((n, c) => adv.push(`${n} planes del corte ${c} tienen un componente en € y no hay tasa €/US$ para esa fecha (data/tasas.json): no entrarán al ranking`));
 manualProblemas.forEach((m) => err.push(`manual ${m}`));
 manualAvisos.forEach((m) => adv.push(`manual ${m}`));
