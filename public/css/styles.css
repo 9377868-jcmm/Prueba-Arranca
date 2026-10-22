@@ -78,3 +78,4 @@ a.b.boton.off{opacity:.45;pointer-events:none}
 button.b.boton{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600}
 button.b:disabled{opacity:.45;cursor:not-allowed}
 .resultado:empty{display:none}
+.bd{color:var(--bad)}.wn{color:var(--warn)}

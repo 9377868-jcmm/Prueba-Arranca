@@ -1,5 +1,7 @@
 // Pestaña "Cargar dato": arma una entrada manual, la valida y abre GitHub con el archivo listo para crear.
-import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, convertir, aCSV, hoyISO, sumaDias, SIMBOLO} from './calc.js';
+import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, convertir, aCSV, hoyISO, sumaDias, slug, SIMBOLO} from './calc.js';
+import {leerXlsx, leerCsv, crearXlsx} from './xlsx-lite.js';
+import {leerTabla, filasAEntradas, filasPlantilla, HOJAS_PLANTILLA, mapaModelos, MAX_FILAS} from './importar.js';
 import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, nombreArchivoLote, urlGitHub} from './manual-core.js';
 import {h, fmtN, fmtT, fmtUsd, fmtD, descargar} from './format.js';
 
@@ -50,6 +52,13 @@ export function vCargar(el, D, opciones = {}) {
   const cE = {empresa: inp('text'), modelo_negocio: inp('text', {placeholder: 'Ej.: Financiamiento directo, arrendamiento con opción a compra'}), marcas: inp('text'),
     ubicacion: inp('text', {value: 'Caracas'}), frecuencia: inp('text'), plazos: inp('text'), gastos_adm: inp('text'), como_publica: inp('text'), confianza: sel([['Media', 'Media'], ['Baja', 'Baja'], ['Alta', 'Alta']], 'Media')};
 
+  // ---- modo Excel
+  const XLSX_TIPO = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const cArchivo = inp('file', {accept: `.xlsx,.csv,text/csv,${XLSX_TIPO}`});
+  const cSoloCambios = h('input', {type: 'checkbox', checked: true});
+  const cSoloValidas = h('input', {type: 'checkbox', checked: true});
+  let tablaArchivo = null;
+
   // ---- modo retiro
   const cRetiro = sel([['', '— elija un dato manual —'], ...activas.map((f) => [f.id, `${f.empresa} · ${f.modelo_clave} · ${f.plan} (${fmtD(f.man.registrado)})`])], '');
 
@@ -99,6 +108,48 @@ export function vCargar(el, D, opciones = {}) {
     return {...k, tipo: 'retiro', id: cRetiro.value};
   }
 
+  function bajarPlantilla(empresa) {
+    const filas = filasPlantilla(reales, empresa);
+    descargar(empresa ? `precios-${slug(empresa)}.xlsx` : 'plantilla-precios.xlsx', crearXlsx(HOJAS_PLANTILLA(filas, filas.length - 1)), XLSX_TIPO);
+  }
+
+  async function leerArchivo(archivo) {
+    if (archivo.size > 2 * 1024 * 1024) throw new Error('El archivo pesa más de 2 MB.');
+    const buf = await archivo.arrayBuffer();
+    if (/\.csv$/i.test(archivo.name) || /csv|text\/plain/.test(archivo.type)) {
+      let texto = new TextDecoder('utf-8').decode(buf);
+      if (texto.includes('\ufffd')) texto = new TextDecoder('windows-1252').decode(buf); // CSV de Excel en español
+      return leerCsv(texto);
+    }
+    return leerXlsx(buf);
+  }
+
+  const ETIQUETA = {ok: ['Correcta', 'g'], aviso: ['Con aviso', 'w'], error: ['Con error', 'bd'], sin_cambio: ['Sin cambios', 'b']};
+  function actualizarExcel() {
+    resultado.replaceChildren();
+    if (!tablaArchivo) { salida.replaceChildren(h('p', {class: 'note'}, 'Elija un archivo para ver la revisión fila por fila.')); return; }
+    if (tablaArchivo.error) { salida.replaceChildren(alerta(tablaArchivo.error)); return; }
+    if (tablaArchivo.faltan.length) { salida.replaceChildren(alerta(`Faltan columnas en el archivo: ${tablaArchivo.faltan.join(', ')}. Use la plantilla.`)); return; }
+    const quien = cQuien.value.trim() || (remoto ? 'por código' : '');
+    const entorno = {ctx: ctx(), reales, nombresModelo: mapaModelos(D.rows), marcasMap: D.marcasMap || {}, marcasLista, hoy};
+    const op = {fuente: cFuente.value, motivo: cMotivo.value, confianza: cConf.value, fecha: cFecha.value || hoy, quien: quien || '(sin nombre)', soloCambios: cSoloCambios.checked};
+    const {resultados, resumen} = filasAEntradas(tablaArchivo, entorno, op);
+    const validas = resultados.filter((r) => r.entrada).map((r) => r.entrada);
+    const kids = [h('p', {class: 'note'}, `${resultados.length} filas leídas: ${resumen.ok} correctas, ${resumen.aviso} con aviso, ${resumen.error} con error, ${resumen.sin_cambio} sin cambios.`)];
+    if (resumen.sobran) kids.push(alerta(`El archivo tiene ${resumen.sobran} filas de más: el máximo es ${MAX_FILAS} por envío. Divida el archivo.`));
+    if (!quien) kids.push(alerta('Escriba su nombre en "Registrado por".'));
+    kids.push(h('div', {class: 'tw', role: 'region', 'aria-label': 'Revisión del archivo', tabindex: 0}, h('table', {}, h('thead', {}, h('tr', {}, ['Fila', 'Estado', 'Plan', 'Mensajes'].map((t) => h('th', {scope: 'col'}, t)))),
+      h('tbody', {}, resultados.map((r) => h('tr', {}, h('td', {class: 'n'}, r.n), h('td', {}, h('span', {class: 'badge ' + ETIQUETA[r.estado][1]}, ETIQUETA[r.estado][0])), h('td', {}, r.etiqueta || '—'),
+        h('td', {}, ...r.errores.map((t) => h('div', {class: 'bd'}, t)), ...r.avisos.map((t) => h('div', {class: 'wn'}, t)))))))));
+    if (resumen.error) kids.push(h('div', {class: 'ctrls'}, h('button', {class: 'b', type: 'button', onclick: () => descargar('filas-con-error.csv', aCSV(resultados.filter((r) => r.estado === 'error').map((r) => ({fila: r.n, plan: r.etiqueta, mensajes: r.errores.join(' | ')})),
+      [{k: 'fila', t: 'Fila'}, {k: 'plan', t: 'Plan'}, {k: 'mensajes', t: 'Mensajes'}]), 'text/csv;charset=utf-8')}, 'Descargar informe de errores')));
+    if (validas.length) {
+      const permitido = !resumen.sobran && Boolean(quien) && (!resumen.error || cSoloValidas.checked);
+      kids.push(h('label', {class: 'cf chk'}, cSoloValidas, h('span', {}, 'Enviar solo las filas correctas (las demás se descartan)')), ...panelEnvio(validas, permitido));
+    } else if (!resumen.error) kids.push(h('p', {class: 'note'}, 'No hay cambios que enviar.'));
+    salida.replaceChildren(...kids);
+  }
+
   // ---- envío: sin GitHub (con código personal) o con GitHub
   let remoto = false;
   const cCodigo = inp('password', {value: leer('mx-codigo'), placeholder: 'Su código personal', autocomplete: 'off'});
@@ -145,6 +196,7 @@ export function vCargar(el, D, opciones = {}) {
   }
 
   function actualizar() {
+    if (modo === 'excel') { actualizarExcel(); return; }
     resultado.replaceChildren();
     guardar('mx-quien', cQuien.value);
     const e = construir();
@@ -182,6 +234,17 @@ export function vCargar(el, D, opciones = {}) {
         h('div', {class: 'fila'}, campo('moni', 'Moneda de la inicial', cMonI), campo('monc', 'Moneda de la cuota', cMonC)),
         h('div', {class: 'fila'}, campo('inicial', 'Inicial', cInicial), campo('cuota', 'Cuota', cCuota)),
         campo('conf', 'Confianza', cConf), ...comun);
+    } else if (modo === 'excel') {
+      const selEmp = sel([['', '— elija una empresa —'], ...empresas.map((e) => [e, e])], '');
+      cuerpo.replaceChildren(
+        h('p', {class: 'note'}, 'Para cargar muchos precios a la vez. Descargue la plantilla (o los precios actuales de una empresa, y cambie solo lo que cambió), llénela en Excel y súbala aquí. Cada fila se revisa antes de enviar.'),
+        h('div', {class: 'ctrls'}, h('button', {class: 'b', type: 'button', onclick: () => bajarPlantilla(null)}, 'Descargar plantilla vacía'), selEmp,
+          h('button', {class: 'b', type: 'button', onclick: () => { if (selEmp.value) bajarPlantilla(selEmp.value); else selEmp.focus(); }}, 'Descargar precios actuales de esa empresa')),
+        campo('archivo', 'Archivo Excel (.xlsx) o CSV', cArchivo),
+        h('div', {class: 'fila'}, campo('motivo', 'Motivo', cMotivo), campo('fecha', 'Fecha del dato (si la fila no la trae)', cFecha)),
+        campo('fuente', 'Fuente para las filas que no la traen', cFuente, 'Ej.: Lista de precios que envió la empresa por WhatsApp el 21-oct, guardada en Drive.'),
+        h('div', {class: 'fila'}, campo('conf', 'Confianza (si la fila no la trae)', cConf), campo('quien', 'Registrado por', cQuien)),
+        h('label', {class: 'cf chk'}, cSoloCambios, h('span', {}, 'Ignorar las filas que no cambian el precio')));
     } else if (modo === 'empresa') {
       cuerpo.replaceChildren(
         campo('e-empresa', 'Nombre de la empresa', cE.empresa), campo('e-neg', 'Modelo de negocio', cE.modelo_negocio),
@@ -199,11 +262,17 @@ export function vCargar(el, D, opciones = {}) {
   [cEmpresa, cModelo].forEach((c) => c.addEventListener('input', () => { cPlan.dataset.tocado = ''; refrescarPlanes(); actualizar(); }));
   cPlan.addEventListener('change', () => { cPlan.dataset.tocado = '1'; cMarca.dataset.tocado = ''; refrescarPlanes(); actualizar(); });
   cMarca.addEventListener('input', () => { cMarca.dataset.tocado = '1'; });
-  [cMotivo, cFecha, cFuente, cUrl, cConf, cQuien, cNota, cCuotas, cFrec, cMarca, cInicial, cCuota, cMonI, cMonC, cRetiro, ...Object.values(cE)].forEach((c) => {
+  cArchivo.addEventListener('change', async () => {
+    const f = cArchivo.files[0];
+    if (!f) { tablaArchivo = null; actualizar(); return; }
+    try { tablaArchivo = leerTabla(await leerArchivo(f)); } catch (e) { tablaArchivo = {error: e.message || 'No se pudo leer el archivo.'}; }
+    actualizar();
+  });
+  [cMotivo, cFecha, cFuente, cUrl, cConf, cQuien, cNota, cSoloCambios, cSoloValidas, cCuotas, cFrec, cMarca, cInicial, cCuota, cMonI, cMonC, cRetiro, ...Object.values(cE)].forEach((c) => {
     c.addEventListener('input', actualizar); c.addEventListener('change', actualizar);
   });
 
-  const tabs = [['precio', 'Actualizar o añadir precio'], ['empresa', 'Empresa nueva'], ['retiro', 'Retirar un dato manual']];
+  const tabs = [['precio', 'Actualizar o añadir precio'], ['excel', 'Subir Excel'], ['empresa', 'Empresa nueva'], ['retiro', 'Retirar un dato manual']];
   const barra = h('div', {class: 'sub', role: 'group', 'aria-label': 'Tipo de carga'}, tabs.map(([k, t]) => h('button', {type: 'button', class: 'b' + (k === modo ? ' on' : ''), 'aria-pressed': String(k === modo), onclick: (ev) => {
     modo = k; barra.querySelectorAll('button').forEach((b) => { const on = b === ev.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); dibujar();
   }}, t)));
