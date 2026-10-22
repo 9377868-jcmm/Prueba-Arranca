@@ -1,5 +1,5 @@
 // Reglas de los datos manuales: las usan el navegador (formulario), validate.mjs y build.mjs.
-import {monedaNorm, diasEntreCuotas, sumaDias, slug} from './calc.js';
+import {monedaNorm, diasEntreCuotas, sumaDias, slug, tasaDe} from './calc.js';
 
 export const MOTIVOS = {sin_publicar: 'La empresa no publicó a tiempo', no_consultable: 'No se pudo consultar en línea', correccion: 'Corrección de un dato', alta_nueva: 'Alta de empresa o modelo nuevo', otro: 'Otro'};
 export const FRECUENCIAS = ['Quincenal', 'Semanal', 'Mensual', 'Cada 14 días'];
@@ -45,9 +45,13 @@ export function validarEntrada(e, ctx) {
 
   if (e.tipo === 'precio') {
     const p = e.plan || {};
-    for (const k of ['empresa', 'marca', 'modelo', 'modelo_clave', 'plan', 'moneda', 'frecuencia']) if (typeof p[k] !== 'string' || !p[k].trim()) err.push(`falta plan.${k}`);
+    const nuevaMoneda = p.moneda_inicial !== undefined || p.moneda_cuota !== undefined;
+    for (const k of ['empresa', 'marca', 'modelo', 'modelo_clave', 'plan', 'frecuencia', ...(nuevaMoneda ? [] : ['moneda'])]) if (typeof p[k] !== 'string' || !p[k].trim()) err.push(`falta plan.${k}`);
     if (p.empresa && !ctx.empresas.has(ctx.alias?.[p.empresa] || p.empresa)) err.push(`la empresa "${p.empresa}" no existe: créela primero (tipo "empresa")`);
-    if (!['USD', 'EUR'].includes(monedaNorm(p.moneda))) err.push('la moneda debe ser USD o EUR');
+    if (nuevaMoneda) {
+      if (!['USD', 'EUR'].includes(p.moneda_inicial)) err.push('la moneda de la inicial debe ser USD o EUR');
+      if (!['USD', 'EUR'].includes(p.moneda_cuota)) err.push('la moneda de la cuota debe ser USD o EUR');
+    } else if (!['USD', 'EUR'].includes(monedaNorm(p.moneda))) err.push('la moneda debe ser USD o EUR');
     if (p.frecuencia && diasEntreCuotas(p.frecuencia) === null) err.push('la frecuencia debe ser semanal, quincenal, cada 14 días o mensual');
     for (const k of ['inicial', 'cuota']) if (p[k] !== null && p[k] !== undefined && (!num(p[k]) || p[k] < 0)) err.push(`plan.${k} debe ser un número mayor o igual a 0`);
     if (!num(p.inicial) && !num(p.cuota)) err.push('indique al menos la inicial o la cuota');
@@ -71,6 +75,8 @@ export function validarEntrada(e, ctx) {
       for (const [a, b, t] of [[real.inicial, p.inicial, 'inicial'], [real.cuota, p.cuota, 'cuota']]) if (num(a) && num(b) && a > 0 && Math.abs(b / a - 1) > 0.4) av.push(`${t}: ${a} → ${b} (variación mayor a 40 % frente al último corte)`);
       if (e.fecha_dato <= real.corte) av.push('el último corte real ya trae este plan con fecha igual o posterior: esta entrada no se usará');
     }
+    const enEur = nuevaMoneda ? p.moneda_inicial === 'EUR' || p.moneda_cuota === 'EUR' : monedaNorm(p.moneda) === 'EUR';
+    if (enEur && ctx.tasas && !tasaDe(e.fecha_dato, ctx.tasas)) av.push('hay un componente en € y no hay tasa €/US$ para esa fecha: el plan no entrará al ranking hasta que se registre la tasa');
     if (vence && vence <= sumaDias(hoy, 7)) av.push('el dato vence en 7 días o menos');
     if (ctx.alias?.[p.empresa] === 'Arranca' || p.empresa === 'Arranca') av.push('es un dato de Arranca (empresa propia): conserve la captura o la url de respaldo');
     if (p.marca && ctx.marcas && !ctx.marcas.has(p.marca)) av.push(`la marca "${p.marca}" no está en data/marcas.json (se usará tal cual)`);

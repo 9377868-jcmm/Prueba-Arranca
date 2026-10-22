@@ -14,16 +14,30 @@ const num = (v) => typeof v === 'number' && Number.isFinite(v);
 export const SIN_MARCA = 'Sin marca indicada';
 const marcaNorm = (m, marcas) => (m in marcas ? marcas[m] : (m || null));
 
-export function enriquecer(r, alias = {}, marcas = {}) {
+// Moneda de un componente: 'USD' | 'EUR' o null si no es una de las dos.
+const monComp = (m) => (m === 'USD' || m === 'EUR' ? m : null);
+export const SIMBOLO = {USD: 'US$', EUR: '€', PCT: '%', OTRA: '?', MIXTA: 'US$ + €'};
+
+/**
+ * Agrega campos derivados a una fila cruda.
+ * Moneda de cada componente: campo explícito de la fila > valor por defecto de la empresa (monedas.json) > moneda única del dato original.
+ */
+export function enriquecer(r, alias = {}, marcas = {}, monedas = {}) {
   const empresa = alias[r.empresa] || r.empresa;
   const dias = diasEntreCuotas(r.frecuencia);
   const cuota_mensual = num(r.cuota) && dias ? Math.round((r.cuota * 30 / dias) * 100) / 100 : null;
-  const costo_total = num(r.inicial) && num(r.cuota) && num(r.n_cuotas) ? Math.round((r.inicial + r.cuota * r.n_cuotas) * 100) / 100 : null;
+  const base = monedaNorm(r.moneda);
+  const def = monedas[empresa] || {};
+  const moneda_inicial = monComp(r.moneda_inicial) || monComp(def.inicial) || base;
+  const moneda_cuota = monComp(r.moneda_cuota) || monComp(def.cuota) || base;
+  const mixto = moneda_inicial !== moneda_cuota;
+  // Costo total en la moneda original: solo tiene sentido si inicial y cuota están en la misma moneda.
+  const costo_total = !mixto && num(r.inicial) && num(r.cuota) && num(r.n_cuotas) ? Math.round((r.inicial + r.cuota * r.n_cuotas) * 100) / 100 : null;
   return {
     ...r, empresa, empresa_raw: r.empresa,
     origen: r.origen === 'manual' ? 'manual' : /^prensa/i.test(r.fuente || '') ? 'prensa' : 'corte',
     marca_norm: marcaNorm(r.marca, marcas),
-    moneda_norm: monedaNorm(r.moneda), dias, cuota_mensual, costo_total,
+    moneda_inicial, moneda_cuota, mixto, moneda_norm: mixto ? 'MIXTA' : moneda_inicial, dias, cuota_mensual, costo_total,
     id: `${slug(empresa)}~${slug(r.modelo_clave)}~${slug(r.plan)}`,
   };
 }
@@ -39,7 +53,7 @@ export function cambios(rows) {
     if (rs.length < 2) return;
     rs.sort((a, b) => a.corte < b.corte ? -1 : 1);
     const a = rs[rs.length - 2], b = rs[rs.length - 1];
-    if (a.moneda_norm !== b.moneda_norm) return;
+    if (a.moneda_inicial !== b.moneda_inicial || a.moneda_cuota !== b.moneda_cuota) return;
     const di = num(a.inicial) && num(b.inicial) ? b.inicial - a.inicial : null;
     const dc = num(a.cuota) && num(b.cuota) ? b.cuota - a.cuota : null;
     if (di === 0 && dc === 0) return;
@@ -59,12 +73,42 @@ export function resumen(rows) {
     modelos: new Set(v.map((r) => r.modelo_clave)).size, cambios: cambios(rows).filter((c) => c.fecha_ahora === last).length};
 }
 
-// Pasa los valores a USD si hay forma de hacerlo (EUR requiere tasa eurUsd); si no, null.
-export function aUsd(r, tasas = {}) {
-  const f = r.moneda_norm === 'USD' ? 1 : r.moneda_norm === 'EUR' && num(tasas.eurUsd) ? tasas.eurUsd : null;
-  const m = (v) => f !== null && num(v) ? Math.round(v * f * 100) / 100 : null;
-  return {...r, u_inicial: m(r.inicial), u_cuota_m: m(r.cuota_mensual), u_total: m(r.costo_total)};
+const r2 = (v) => Math.round(v * 100) / 100;
+
+/**
+ * Tasa euro -> dólar aplicable a una fecha. Prioridad: la que escribió el usuario (override); la del mismo corte;
+ * la más reciente anterior. Nunca usa una tasa posterior. Devuelve {valor, fecha, origen} o null.
+ */
+export function tasaDe(corte, tasas = {}) {
+  const o = tasas.override ?? tasas.eurUsd;
+  if (num(o) && o > 0) return {valor: o, fecha: null, origen: 'usuario'};
+  const pc = tasas.porCorte || {};
+  const fechas = Object.keys(pc).filter((f) => num(pc[f]) && pc[f] > 0 && f <= corte).sort();
+  if (!fechas.length) return null;
+  const f = fechas[fechas.length - 1];
+  return {valor: pc[f], fecha: f, origen: 'BCV'};
 }
+
+/**
+ * Pasa los precios a US$ componente por componente. Agrega u_inicial, u_cuota, u_cuota_m, u_total y
+ * conv = {inicial, cuota, tasa, tasa_fecha, origen} (true = ese componente fue convertido), y falta_tasa si
+ * un componente en € no se pudo convertir (entonces sus montos en US$ quedan null).
+ */
+export function convertir(r, tasas = {}) {
+  const t = tasaDe(r.corte, tasas);
+  let falta = false;
+  const a = (v, mon) => {
+    if (!num(v)) return {v: null, conv: false};
+    if (mon === 'USD') return {v: r2(v), conv: false};
+    if (mon === 'EUR') { if (t) return {v: r2(v * t.valor), conv: true}; falta = true; }
+    return {v: null, conv: false};
+  };
+  const i = a(r.inicial, r.moneda_inicial), c = a(r.cuota, r.moneda_cuota), cm = a(r.cuota_mensual, r.moneda_cuota);
+  const total = i.v !== null && c.v !== null && num(r.n_cuotas) ? r2(i.v + c.v * r.n_cuotas) : null;
+  return {...r, u_inicial: i.v, u_cuota: c.v, u_cuota_m: cm.v, u_total: total, falta_tasa: falta,
+    conv: {inicial: i.conv, cuota: c.conv, tasa: t ? t.valor : null, tasa_fecha: t ? t.fecha : null, origen: t ? t.origen : null}};
+}
+export const aUsd = convertir; // nombre anterior
 
 export const PESOS = {total: 0.5, cuota: 0.3, inicial: 0.2};
 const BAJA = /^baja/i;
@@ -130,10 +174,10 @@ export const sumaDias = (f, d) => new Date(new Date(f + 'T00:00:00Z').getTime() 
 export const hoyISO = () => new Date().toISOString().slice(0, 10);
 
 // Entrada "precio" -> fila de plan con los mismos campos que el historial.
-export function filaManual(e, alias = {}, marcas = {}) {
+export function filaManual(e, alias = {}, marcas = {}, monedas = {}) {
   return {
     ...enriquecer({...e.plan, corte: e.fecha_dato, fecha_dato: e.fecha_dato, fuente: 'Manual: ' + e.fuente, url: e.url || '',
-      confianza: e.confianza || 'Media', nota: e.nota || '', origen: 'manual'}, alias, marcas),
+      confianza: e.confianza || 'Media', nota: e.nota || '', origen: 'manual'}, alias, marcas, monedas),
     man: {registrado_por: e.registrado_por, registrado: e.registrado, vence: e.vence || sumaDias(e.fecha_dato, 30), motivo: e.motivo, fuente: e.fuente},
   };
 }

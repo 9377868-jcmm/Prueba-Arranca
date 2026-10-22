@@ -1,4 +1,5 @@
 export const fmtN = (v) => (v === null || v === undefined || v === '') ? '—' : (typeof v === 'number' ? new Intl.NumberFormat('es-VE', {maximumFractionDigits: 2}).format(v) : String(v));
+export const fmtT = (v) => (v === null || v === undefined ? '—' : new Intl.NumberFormat('es-VE', {maximumFractionDigits: 4}).format(v));
 export const fmtUsd = (v) => (v === null || v === undefined) ? '—' : '$' + fmtN(v);
 export const fmtD = (s) => { if (!s) return '—'; const d = new Date(s + 'T00:00:00Z'); return isNaN(d) ? s : new Intl.DateTimeFormat('es-VE', {day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'}).format(d); };
 export const pillCls = (c = '') => /^alta/i.test(c) ? 'alta' : /^media/i.test(c) ? 'media' : 'baja';

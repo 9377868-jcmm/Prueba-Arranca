@@ -42,7 +42,7 @@ export function lineas(box, series, ocultas = new Set(), onToggle = () => {}) {
     if (!off) {
       svg.append('path').datum(pts).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2).attr('d', ln);
       svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.v)).attr('r', 5).attr('fill', (p) => p.man ? 'var(--bg)' : col).attr('stroke', col).attr('stroke-width', 2)
-        .on('pointermove', (ev, p) => mostrar(box, tip, ev, [fmtD(p.c) + (p.man ? ' · dato manual' : ''), `${s.empresa}: $${fmtN(p.v)}`])).on('pointerleave', () => { tip.hidden = true; });
+        .on('pointermove', (ev, p) => mostrar(box, tip, ev, [fmtD(p.c) + (p.man ? ' · dato manual' : ''), `${s.empresa}: $${fmtN(p.v)}`, ...(p.orig ? [`convertido de ${p.orig}`] : [])])).on('pointerleave', () => { tip.hidden = true; });
     }
     ends.push({y: off ? 1e9 : y(pts[pts.length - 1].v), e: s.empresa, t: s.empresa + (off ? '' : ' · ' + fmtN(pts[pts.length - 1].v)), col, off});
   });

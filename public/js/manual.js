@@ -1,7 +1,7 @@
 // Pestaña "Cargar dato": arma una entrada manual, la valida y abre GitHub con el archivo listo para crear.
-import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, aCSV, hoyISO, sumaDias} from './calc.js';
+import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, convertir, aCSV, hoyISO, sumaDias, SIMBOLO} from './calc.js';
 import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, urlGitHub} from './manual-core.js';
-import {h, fmtN, fmtUsd, fmtD, descargar} from './format.js';
+import {h, fmtN, fmtT, fmtUsd, fmtD, descargar} from './format.js';
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento: no pasa nada */ } };
 const leer = (k) => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
@@ -14,7 +14,7 @@ export function vCargar(el, D, opciones = {}) {
   const activas = manualActivas(D.manual.entradas, hoy);
   const ctx = () => ({hoy, alias: {}, empresas: new Set(empresas), ids: new Set(D.rows.map((r) => r.id)), modelos: new Set(D.rows.map((r) => r.modelo_clave)),
     manualIds: new Set(D.manual.entradas.filter((e) => e.tipo === 'precio').map((e) => e.fila.id)), marcas: new Set([...Object.keys(D.marcasMap || {}), ...marcasLista, ...D.rows.map((r) => r.marca)]),
-    ultimos: new Map(reales.map((r) => [r.id, r]))});
+    ultimos: new Map(reales.map((r) => [r.id, r])), tasas: {porCorte: D.tasasPorCorte}});
 
   let modo = 'precio';
   const campos = {};
@@ -41,7 +41,9 @@ export function vCargar(el, D, opciones = {}) {
   const cMarca = inp('text', {list: 'dl-marca', placeholder: 'Marca'});
   const cInicial = inp('number', {min: 0, step: 'any'});
   const cCuota = inp('number', {min: 0, step: 'any'});
-  const cMoneda = sel([['USD', 'US$'], ['EUR', '€ (euro)']], 'USD');
+  const MON = [['USD', 'US$ (dólares)'], ['EUR', '€ (euros)']];
+  const cMonI = sel(MON, 'USD');
+  const cMonC = sel(MON, 'EUR');
   const bloquePlanNuevo = h('div', {class: 'fila'});
 
   // ---- modo empresa
@@ -86,7 +88,8 @@ export function vCargar(el, D, opciones = {}) {
       return {...k, tipo: 'precio', confianza: cConf.value, vence: sumaDias(cFecha.value || hoy, 30), nota: cNota.value.trim(),
         nuevo: nuevoPlan ? (modeloExiste ? 'plan' : 'modelo') : null,
         plan: {empresa, marca: cMarca.value.trim(), modelo: existente ? modelo : (base ? base.modelo : modelo), modelo_clave: clave, plan,
-          inicial: numero(cInicial), inicial_txt: '', cuota: numero(cCuota), cuota_txt: '', moneda: cMoneda.value === 'EUR' ? '€ (manual)' : 'USD',
+          inicial: numero(cInicial), inicial_txt: '', cuota: numero(cCuota), cuota_txt: '', moneda_inicial: cMonI.value, moneda_cuota: cMonC.value,
+          moneda: cMonI.value === cMonC.value ? (cMonI.value === 'EUR' ? '€ (manual)' : 'USD') : `${cMonI.value} (inicial) / ${cMonC.value} (cuota)`,
           frecuencia: existente ? existente.frecuencia : cFrec.value, n_cuotas: existente ? existente.n_cuotas : n}};
     }
     if (modo === 'empresa') {
@@ -107,10 +110,15 @@ export function vCargar(el, D, opciones = {}) {
     if (!errores.length && modo === 'precio') {
       const f = filaManual(e, {}, D.marcasMap || {});
       const otros = D.vigAll.filter((r) => r.modelo_clave === f.modelo_clave && r.id !== f.id);
-      const {ranking} = rankearModelo([...otros, f], {tasas: {eurUsd: D.eurUsd}});
+      const {ranking} = rankearModelo([...otros, f], {tasas: {porCorte: D.tasasPorCorte}});
       const pos = ranking.findIndex((p) => p.id === f.id);
-      kids.push(h('p', {class: 'note'}, `Costo total: ${f.costo_total !== null ? fmtN(f.costo_total) : '—'} · cuota mensual equivalente: ${f.cuota_mensual !== null ? fmtN(f.cuota_mensual) : '—'}. `,
-        pos >= 0 ? `Quedaría en el puesto ${pos + 1} de ${ranking.length} para ${f.modelo_clave}.` : 'No entra al ranking (falta cuota, n.° de cuotas o tasa del euro).'));
+      const cv = convertir(f, {porCorte: D.tasasPorCorte});
+      const lineas = [`Inicial: ${SIMBOLO[f.moneda_inicial]} ${fmtN(f.inicial)}${cv.conv.inicial ? ` ≈ ${fmtUsd(cv.u_inicial)} (convertido)` : ''}. Cuota: ${SIMBOLO[f.moneda_cuota]} ${fmtN(f.cuota)}${cv.conv.cuota ? ` ≈ ${fmtUsd(cv.u_cuota)} (convertido)` : ''}.`];
+      if (cv.conv.tasa && (cv.conv.inicial || cv.conv.cuota)) lineas.push(`Tasa € → US$: ${fmtT(cv.conv.tasa)} (BCV, ${fmtD(cv.conv.tasa_fecha)}).`);
+      if (cv.falta_tasa) lineas.push('No hay tasa € → US$ para esa fecha: el plan no entrará al ranking hasta que se registre.');
+      lineas.push(`Costo total: ${cv.u_total !== null ? fmtUsd(cv.u_total) : '—'} · cuota mensual equivalente: ${cv.u_cuota_m !== null ? fmtUsd(cv.u_cuota_m) : '—'}.`,
+        pos >= 0 ? `Quedaría en el puesto ${pos + 1} de ${ranking.length} para ${f.modelo_clave}.` : 'No entra al ranking (falta cuota, n.° de cuotas o tasa del euro).');
+      kids.push(h('p', {class: 'note'}, lineas.join(' ')));
     }
     const archivo = nombreArchivo(e);
     const u = urlGitHub(archivo, [e]);
@@ -132,7 +140,8 @@ export function vCargar(el, D, opciones = {}) {
         h('div', {class: 'fila'}, campo('empresa', 'Empresa', cEmpresa), campo('modelo', 'Modelo', cModelo)),
         campo('plan', 'Plan', cPlan, 'Elija uno existente para actualizar su precio, o "Plan nuevo" para crearlo (también sirve para un modelo nuevo).'),
         h('div', {class: 'fila'}, campo('cuotas', 'N.° de cuotas (solo plan nuevo)', cCuotas), campo('frec', 'Frecuencia (solo plan nuevo)', cFrec)),
-        h('div', {class: 'fila'}, campo('marca', 'Marca', cMarca), campo('moneda', 'Moneda', cMoneda)),
+        campo('marca', 'Marca', cMarca),
+        h('div', {class: 'fila'}, campo('moni', 'Moneda de la inicial', cMonI), campo('monc', 'Moneda de la cuota', cMonC)),
         h('div', {class: 'fila'}, campo('inicial', 'Inicial', cInicial), campo('cuota', 'Cuota', cCuota)),
         campo('conf', 'Confianza', cConf), ...comun);
     } else if (modo === 'empresa') {
@@ -152,7 +161,7 @@ export function vCargar(el, D, opciones = {}) {
   [cEmpresa, cModelo].forEach((c) => c.addEventListener('input', () => { cPlan.dataset.tocado = ''; refrescarPlanes(); actualizar(); }));
   cPlan.addEventListener('change', () => { cPlan.dataset.tocado = '1'; cMarca.dataset.tocado = ''; refrescarPlanes(); actualizar(); });
   cMarca.addEventListener('input', () => { cMarca.dataset.tocado = '1'; });
-  [cMotivo, cFecha, cFuente, cUrl, cConf, cQuien, cNota, cCuotas, cFrec, cMarca, cInicial, cCuota, cMoneda, cRetiro, ...Object.values(cE)].forEach((c) => {
+  [cMotivo, cFecha, cFuente, cUrl, cConf, cQuien, cNota, cCuotas, cFrec, cMarca, cInicial, cCuota, cMonI, cMonC, cRetiro, ...Object.values(cE)].forEach((c) => {
     c.addEventListener('input', actualizar); c.addEventListener('change', actualizar);
   });
 
@@ -172,13 +181,13 @@ export function vCargar(el, D, opciones = {}) {
     refrescarPlanes();
     if ([...cPlan.options].some((o) => o.value === f.plan)) cPlan.value = f.plan;
     cInicial.value = f.inicial ?? ''; cCuota.value = f.cuota ?? ''; cMarca.value = f.marca_norm || f.marca || ''; cMarca.dataset.tocado = '1';
-    cMoneda.value = f.moneda_norm === 'EUR' ? 'EUR' : 'USD'; cFecha.value = hoy; cMotivo.value = 'otro'; cConf.value = f.confianza === 'Alta' ? 'Media' : f.confianza;
+    cMonI.value = f.moneda_inicial === 'EUR' ? 'EUR' : 'USD'; cMonC.value = f.moneda_cuota === 'EUR' ? 'EUR' : 'USD'; cFecha.value = hoy; cMotivo.value = 'otro'; cConf.value = f.confianza === 'Alta' ? 'Media' : f.confianza;
     cFuente.value = ''; cFuente.placeholder = 'Confirme el dato y diga de dónde lo verificó hoy'; cNota.value = 'Renovación del dato del ' + f.fecha_dato;
     actualizar(); cuerpo.scrollIntoView({behavior: 'smooth', block: 'start'});
   }
-  const COLS = [{k: 'estado', t: 'Estado'}, {k: 'empresa', t: 'Empresa'}, {k: 'modelo_clave', t: 'Modelo'}, {k: 'plan', t: 'Plan'}, {k: 'inicial', t: 'Inicial'}, {k: 'cuota', t: 'Cuota'}, {k: 'moneda_norm', t: 'Moneda'},
+  const COLS = [{k: 'estado', t: 'Estado'}, {k: 'empresa', t: 'Empresa'}, {k: 'modelo_clave', t: 'Modelo'}, {k: 'plan', t: 'Plan'}, {k: 'inicial', t: 'Inicial'}, {k: 'cuota', t: 'Cuota'}, {k: 'moneda_norm', t: 'Monedas'},
     {k: 'fecha_dato', t: 'Fecha del dato'}, {k: 'vence', t: 'Vence'}, {k: 'registrado_por', t: 'Registrado por'}, {k: 'fuente', t: 'Fuente'}, {k: 'archivo', t: 'Archivo'}];
-  const plano = registro.map((r) => ({estado: ESTADOS[r.estado][0], empresa: r.fila.empresa, modelo_clave: r.fila.modelo_clave, plan: r.fila.plan, inicial: r.fila.inicial, cuota: r.fila.cuota, moneda_norm: r.fila.moneda_norm,
+  const plano = registro.map((r) => ({estado: ESTADOS[r.estado][0], empresa: r.fila.empresa, modelo_clave: r.fila.modelo_clave, plan: r.fila.plan, inicial: r.fila.inicial, cuota: r.fila.cuota, moneda_norm: r.fila.mixto ? `inicial ${SIMBOLO[r.fila.moneda_inicial]} / cuota ${SIMBOLO[r.fila.moneda_cuota]}` : SIMBOLO[r.fila.moneda_inicial],
     fecha_dato: r.fila.fecha_dato, vence: r.fila.man.vence, registrado_por: r.fila.man.registrado_por, fuente: r.fila.man.fuente, archivo: r.archivo}));
   const historial = h('div', {class: 'card'}, h('h2', {}, 'Datos manuales registrados'),
     h('p', {class: 'note'}, 'Nada se borra: cada dato manual queda guardado en el repositorio (carpeta data/manual) aunque venza, sea reemplazado o lo cubra un corte real. Aquí puede verlos todos, descargarlos y renovar los vencidos.'),

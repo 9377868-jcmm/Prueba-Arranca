@@ -1,9 +1,10 @@
 // Valida data/. Errores -> salida 1. Advertencias -> se imprimen (y salida 0, salvo --estricto).
 import {readFileSync, readdirSync} from 'node:fs';
 import {cargar} from './cargar.mjs';
-import {cambios} from '../public/js/calc.js';
+import {cambios, tasaDe} from '../public/js/calc.js';
 
-const {rows, empresas, alias, manual, manualProblemas, manualAvisos} = cargar();
+const {rows, empresas, alias, manual, manualProblemas, manualAvisos, tasas} = cargar();
+const porCorte = Object.fromEntries(Object.entries(tasas.cortes).map(([c, t]) => [c, t.eur_usd]));
 const err = [], adv = [];
 const hoy = new Date().toISOString().slice(0, 10);
 const nombres = new Set(empresas.map((e) => e.empresa));
@@ -44,6 +45,10 @@ if (n >= 1) {
   const ur = rows.filter((r) => r.corte === ult && r.origen === 'corte');
   if (ur.filter((r) => /^baja/i.test(r.confianza)).length > ur.length / 2) adv.push('más de la mitad del último corte tiene confianza Baja');
 }
+// Planes con un componente en € cuyo corte no tiene tasa: no se pueden convertir a US$ ni entrar al ranking.
+const sinTasa = new Map();
+[...rows, ...manual.entradas.filter((e) => e.tipo === 'precio').map((e) => e.fila)].filter((r) => (r.moneda_inicial === 'EUR' || r.moneda_cuota === 'EUR') && !tasaDe(r.corte, {porCorte})).forEach((r) => sinTasa.set(r.corte, (sinTasa.get(r.corte) || 0) + 1));
+sinTasa.forEach((n, c) => adv.push(`${n} planes del corte ${c} tienen un componente en € y no hay tasa €/US$ para esa fecha (data/tasas.json): no entrarán al ranking`));
 manualProblemas.forEach((m) => err.push(`manual ${m}`));
 manualAvisos.forEach((m) => adv.push(`manual ${m}`));
 if (manual.entradas.length > 25) adv.push(`hay ${manual.entradas.length} entradas manuales: archive las vencidas`);
