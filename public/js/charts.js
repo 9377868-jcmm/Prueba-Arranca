@@ -23,7 +23,7 @@ export function lineas(box, series, ocultas = new Set(), onToggle = () => {}) {
   const vis = series.filter((s) => s.pts.length);
   if (!vis.length) { box.append(h('p', {class: 'empty'}, 'Este modelo no tiene inicial publicada en dólares.')); return; }
   const tip = tooltip(box);
-  const W = box.clientWidth || 600, H = 300, labW = Math.min(150, W * 0.3), ml = 44;
+  const W = box.clientWidth || 600, H = 300, movil = W < 520, labW = movil ? 14 : Math.min(150, W * 0.3), ml = 44;
   const all = vis.flatMap((s) => s.pts.map((p) => ({...p, d: new Date(p.c + 'T00:00:00Z')})));
   const shown = all.filter((p) => !ocultas.has(p.empresa));
   const y = d3.scaleLinear([0, (d3.max(shown.length ? shown : all, (p) => p.v) || 1) * 1.12], [H - 28, 12]).nice();
@@ -41,15 +41,18 @@ export function lineas(box, series, ocultas = new Set(), onToggle = () => {}) {
     const pts = s.pts.map((p) => ({...p, d: new Date(p.c + 'T00:00:00Z')})).sort((a, b) => a.d - b.d);
     if (!off) {
       svg.append('path').datum(pts).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2).attr('d', ln);
-      svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.v)).attr('r', 5).attr('fill', (p) => p.man ? 'var(--bg)' : col).attr('stroke', col).attr('stroke-width', 2)
-        .on('pointermove', (ev, p) => mostrar(box, tip, ev, [fmtD(p.c) + (p.man ? ' · dato manual' : ''), `${s.empresa}: $${fmtN(p.v)}`, ...(p.orig ? [`convertido de ${p.orig}`] : [])])).on('pointerleave', () => { tip.hidden = true; });
+      svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.v)).attr('r', movil ? 8 : 5).attr('fill', (p) => p.man ? 'var(--bg)' : col).attr('stroke', col).attr('stroke-width', 2)
+        .on('pointermove pointerdown', (ev, p) => mostrar(box, tip, ev, [fmtD(p.c) + (p.man ? ' · dato manual' : ''), `${s.empresa}: $${fmtN(p.v)}`, ...(p.orig ? [`convertido de ${p.orig}`] : [])])).on('pointerleave', (ev) => { if (ev.pointerType !== 'touch') tip.hidden = true; });
     }
     ends.push({y: off ? 1e9 : y(pts[pts.length - 1].v), e: s.empresa, t: s.empresa + (off ? '' : ' · ' + fmtN(pts[pts.length - 1].v)), col, off});
   });
   ends.sort((a, b) => a.y - b.y);
   let ly = 12;
   ends.forEach((e, i) => { e.y = e.off ? 12 + 14 * i : Math.max(e.y, ly); ly = e.y + 14; });
-  svg.append('g').selectAll('text').data(ends).join('text').attr('x', W - labW + 8).attr('y', (d) => d.y).attr('dy', '0.32em').attr('font-size', 11)
+  if (movil) {
+    box.append(h('div', {class: 'leyenda-g'}, ...vis.map((s, i) => { const off = ocultas.has(s.empresa), u = s.pts[s.pts.length - 1];
+      return h('button', {type: 'button', class: 'chip-e' + (off ? ' off' : ''), 'aria-pressed': String(!off), onclick: () => onToggle(s.empresa)}, h('i', {class: 'pt ' + (s.empresa === 'Arranca' ? 'ar' : 'c' + (i % PALETA.length))}), s.empresa + ' · ' + fmtN(u.v)); })));
+  } else svg.append('g').selectAll('text').data(ends).join('text').attr('x', W - labW + 8).attr('y', (d) => d.y).attr('dy', '0.32em').attr('font-size', 11)
     .attr('fill', (d) => d.off ? css : d.col).attr('opacity', (d) => d.off ? 0.5 : 1).style('cursor', 'pointer').style('text-decoration', (d) => d.off ? 'line-through' : null)
     .text((d) => d.t).on('click', (ev, d) => onToggle(d.e))
     .each(function () { while (this.getComputedTextLength() > labW - 10 && this.textContent.length > 4) this.textContent = this.textContent.slice(0, -2) + '…'; });

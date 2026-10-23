@@ -316,7 +316,7 @@ function renderVista() {
   escribirHash();
 }
 function render() {
-  document.querySelectorAll('#tabs a').forEach((a) => { if (a.dataset.p === S.tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.querySelectorAll('#tabs a').forEach((a) => { if (a.dataset.p === S.tab) { a.setAttribute('aria-current', 'page'); a.scrollIntoView?.({inline: 'center', block: 'nearest'}); } else a.removeAttribute('aria-current'); });
   document.title = `${NOMBRES[S.tab]} · Motos a cuotas en Caracas`;
   sincronizarBarra(); renderVista();
 }
