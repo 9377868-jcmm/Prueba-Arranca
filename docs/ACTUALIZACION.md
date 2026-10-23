@@ -17,3 +17,11 @@ Procedimiento para la rutina programada. Todo se hace por PR; el CI valida y el 
 7. Abrir el PR contra `main` con el resumen de cambios. Sin advertencias sin explicar: merge. El merge a `main` dispara la construcción y el despliegue en Cloudflare Workers Builds.
 
 `frescura.yml` avisa por correo si pasan más de 17 días sin un corte nuevo.
+
+## Carga manual sin GitHub
+
+Las personas sin acceso al repositorio cargan datos desde "Cargar dato" con un código personal; el Worker (`src/worker.js`) valida y abre un PR con el archivo en `data/manual/`. Ese PR se revisa y se une igual que cualquier otro.
+
+- Secretos en Cloudflare (Workers & Pages → prueba-arranca → Settings → Variables and Secrets, tipo Secret): `GITHUB_TOKEN` (token fino de GitHub: solo este repositorio, Contents y Pull requests en lectura y escritura; renovar antes de que venza) y `CODIGOS` (huellas de los códigos).
+- Personas: `docs/codigos.html` genera el código y el texto de `CODIGOS`; para revocar, quitar a la persona y pegar el texto nuevo.
+- Revisar los PR de rama `carga/...`: fuente, fecha, monedas de inicial y cuota, y las advertencias de la descripción.

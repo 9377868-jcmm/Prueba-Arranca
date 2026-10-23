@@ -93,3 +93,37 @@ export function validarEntrada(e, ctx) {
   }
   return {errores: err, avisos: av};
 }
+
+// ---------- saneado y utilidades compartidas con el Worker y la carga por Excel ----------
+const CLAVES = {
+  comun: ['v', 'tipo', 'registrado_por', 'registrado', 'motivo', 'fuente', 'url', 'fecha_dato', 'confianza', 'vence', 'nota', 'nuevo', 'plan', 'ficha', 'id'],
+  plan: ['empresa', 'marca', 'modelo', 'modelo_clave', 'plan', 'inicial', 'inicial_txt', 'cuota', 'cuota_txt', 'moneda', 'moneda_inicial', 'moneda_cuota', 'frecuencia', 'n_cuotas'],
+  ficha: ['empresa', 'modelo_negocio', 'marcas', 'ubicacion', 'frecuencia', 'plazos', 'gastos_adm', 'como_publica', 'confianza', 'fuente'],
+};
+const MAX_TXT = 500;
+const limpio = (v) => (typeof v === 'string' ? v.trim().slice(0, MAX_TXT) : v);
+const pick = (o, claves) => Object.fromEntries(claves.filter((k) => o && k in o).map((k) => [k, limpio(o[k])]));
+
+// Deja solo los campos conocidos (y los textos acotados): lo que llega de un navegador nunca se copia tal cual.
+export function sanear(e) {
+  if (!e || typeof e !== 'object') return null;
+  const out = pick(e, CLAVES.comun.filter((k) => k !== 'plan' && k !== 'ficha'));
+  if (e.plan && typeof e.plan === 'object') out.plan = pick(e.plan, CLAVES.plan);
+  if (e.ficha && typeof e.ficha === 'object') out.ficha = pick(e.ficha, CLAVES.ficha);
+  return out;
+}
+
+// Busca un modelo existente ignorando mayúsculas, tildes y espacios de más; si no existe, devuelve la clave nueva.
+export function resolverModelo(texto, modelos) {
+  const clave = claveModelo(texto);
+  const s = slug(clave);
+  for (const m of modelos) if (slug(m) === s) return m;
+  return clave;
+}
+
+export function nombreArchivoLote(entradas, ahora = new Date()) {
+  const t = ahora.toISOString().slice(0, 16).replace('T', '-').replace(':', '');
+  const empresas = [...new Set(entradas.map((e) => e.plan?.empresa || e.ficha?.empresa).filter(Boolean))];
+  const quien = empresas.length === 1 ? slug(empresas[0]).slice(0, 30) : 'varias-empresas';
+  return `data/manual/${t}-lote-${quien}-${entradas.length}.json`;
+}

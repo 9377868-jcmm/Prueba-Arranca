@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de códigos de carga</title>
+<style>
+:root{--bg:#fff;--fg:#1b1b1f;--muted:#5f6370;--panel:#f6f6f8;--line:#dcdce2;--acc:#2456d6;--warn:#a66300;--bad:#c0322b;--ok:#1a7f45}
+@media(prefers-color-scheme:dark){:root{--bg:#121316;--fg:#ececf0;--muted:#a0a4b0;--panel:#1b1c21;--line:#33353d;--acc:#7fa2ff;--warn:#e0a03a;--bad:#ef6a62;--ok:#4cc27f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:1.25rem 1rem 3rem}h1{font-family:Georgia,serif;font-weight:400;font-size:1.7rem;margin:.25rem 0}h2{font-size:1.1rem;margin:0 0 .5rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:1rem;margin:1rem 0}
+label{display:block;font-size:.85rem;font-weight:600;margin:.5rem 0 .2rem}
+input,textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:.5rem .6rem}
+textarea{font-family:ui-monospace,Consolas,monospace;font-size:.85rem;min-height:7rem}
+button{font:inherit;cursor:pointer;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.5rem .9rem;min-height:2.5rem}
+button.p{background:var(--acc);color:var(--bg);border-color:var(--acc);font-weight:600}
+.cod{font-family:ui-monospace,Consolas,monospace;font-size:1.4rem;letter-spacing:.05em;word-break:break-all;padding:.5rem;background:var(--bg);border:1px dashed var(--acc);border-radius:8px;margin:.5rem 0}
+.n{color:var(--muted);font-size:.85rem}.m{border-left:4px solid var(--warn);padding:.4rem .8rem;background:var(--bg);margin:.75rem 0}
+li{display:flex;gap:.5rem;align-items:center;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--line)}ul{list-style:none;padding:0;margin:.5rem 0}
+.b{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>Generador de códigos de carga</h1>
+<p class="n">Cada persona que cargue datos desde el sitio, sin cuenta de GitHub, usa un código personal. Esta página lo genera en su computador (no envía nada a ninguna parte) y arma el texto que se guarda en Cloudflare como secreto <code>CODIGOS</code>. Ábrala guardando el archivo y haciendo doble clic.</p>
+
+<div class="card">
+<h2>1. Lista actual de personas</h2>
+<p class="n">Pegue aquí el texto de <code>CODIGOS</code> que ya tiene guardado (o déjelo vacío si es la primera vez). Los secretos de Cloudflare no se pueden volver a leer: guarde siempre el texto nuevo que esta página le entrega, en un lugar seguro.</p>
+<textarea id="actual" placeholder='{}' spellcheck="false"></textarea>
+<div class="b"><button id="cargar">Leer lista</button></div>
+<ul id="lista" aria-live="polite"></ul>
+</div>
+
+<div class="card">
+<h2>2. Agregar una persona</h2>
+<label for="nombre">Nombre (es el que aparecerá como "registrado por")</label>
+<input id="nombre" maxlength="60" placeholder="Ej.: Ricardo">
+<div class="b"><button class="p" id="generar">Generar código</button></div>
+<div id="nuevo" hidden>
+<p class="n">Entregue este código a la persona <strong>ahora</strong>: no se puede volver a ver, solo se guarda su huella.</p>
+<div class="cod" id="codigo"></div>
+<div class="b"><button id="copiar">Copiar código</button></div>
+</div>
+</div>
+
+<div class="card">
+<h2>3. Texto para Cloudflare</h2>
+<textarea id="salida" readonly spellcheck="false"></textarea>
+<div class="b"><button id="copiarsalida">Copiar texto</button></div>
+<div class="m"><strong>Dónde pegarlo:</strong> Cloudflare → Workers &amp; Pages → prueba-arranca → Settings → Variables and Secrets → <code>CODIGOS</code> (tipo <strong>Secret</strong>) → pegar el texto → guardar. El cambio rige al instante. Para quitar a alguien, use «Quitar» en la lista y pegue el texto nuevo.</div>
+</div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let tabla = {};
+const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin letras ni números que se confunden
+function azar(n) {
+  const b = crypto.getRandomValues(new Uint8Array(n * 2));
+  let s = '';
+  for (const x of b) { if (x < 224 && s.length < n) s += ALFABETO[x % 32]; } // 224 = 7 * 32: sin sesgo
+  return s.length === n ? s : azar(n);
+}
+const generarCodigo = () => [azar(5), azar(5), azar(5), azar(5)].join('-'); // 20 caracteres: unos 100 bits
+async function huella(texto) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
+  return [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+function pintar() {
+  $('salida').value = JSON.stringify(tabla, null, 1);
+  const ul = $('lista'); ul.replaceChildren();
+  const ent = Object.entries(tabla);
+  if (!ent.length) { const li = document.createElement('li'); li.textContent = 'Todavía no hay personas.'; ul.append(li); return; }
+  for (const [h, nombre] of ent) {
+    const li = document.createElement('li');
+    const t = document.createElement('span'); t.textContent = `${nombre} · huella ${h.slice(0, 8)}…`;
+    const b = document.createElement('button'); b.textContent = 'Quitar';
+    b.addEventListener('click', () => { delete tabla[h]; pintar(); });
+    li.append(t, b); ul.append(li);
+  }
+}
+$('cargar').addEventListener('click', () => {
+  const txt = $('actual').value.trim() || '{}';
+  try {
+    const o = JSON.parse(txt);
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error();
+    tabla = Object.fromEntries(Object.entries(o).filter(([k, v]) => /^[0-9a-f]{64}$/.test(k) && typeof v === 'string'));
+  } catch { alert('El texto no es válido. Debe verse como {"huella": "Nombre"}.'); return; }
+  pintar();
+});
+$('generar').addEventListener('click', async () => {
+  const nombre = $('nombre').value.trim();
+  if (nombre.length < 2) { alert('Escriba el nombre de la persona.'); return; }
+  const codigo = generarCodigo();
+  tabla[await huella(codigo)] = nombre;
+  $('codigo').textContent = codigo; $('nuevo').hidden = false; $('nombre').value = '';
+  pintar();
+});
+$('copiar').addEventListener('click', () => navigator.clipboard.writeText($('codigo').textContent));
+$('copiarsalida').addEventListener('click', () => navigator.clipboard.writeText($('salida').value));
+pintar();
+</script>
+</body>
+</html>

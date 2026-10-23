@@ -1,6 +1,8 @@
 // Pestaña "Cargar dato": arma una entrada manual, la valida y abre GitHub con el archivo listo para crear.
-import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, convertir, aCSV, hoyISO, sumaDias, SIMBOLO} from './calc.js';
-import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, urlGitHub} from './manual-core.js';
+import {vigentes, manualActivas, filaManual, rankearModelo, estadosManual, convertir, aCSV, hoyISO, sumaDias, slug, SIMBOLO} from './calc.js';
+import {leerXlsx, leerCsv, crearXlsx} from './xlsx-lite.js';
+import {leerTabla, filasAEntradas, filasPlantilla, HOJAS_PLANTILLA, mapaModelos, MAX_FILAS} from './importar.js';
+import {MOTIVOS, FRECUENCIAS, validarEntrada, nombrePlan, claveModelo, nombreArchivo, nombreArchivoLote, urlGitHub} from './manual-core.js';
 import {h, fmtN, fmtT, fmtUsd, fmtD, descargar} from './format.js';
 
 const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento: no pasa nada */ } };
@@ -50,6 +52,13 @@ export function vCargar(el, D, opciones = {}) {
   const cE = {empresa: inp('text'), modelo_negocio: inp('text', {placeholder: 'Ej.: Financiamiento directo, arrendamiento con opción a compra'}), marcas: inp('text'),
     ubicacion: inp('text', {value: 'Caracas'}), frecuencia: inp('text'), plazos: inp('text'), gastos_adm: inp('text'), como_publica: inp('text'), confianza: sel([['Media', 'Media'], ['Baja', 'Baja'], ['Alta', 'Alta']], 'Media')};
 
+  // ---- modo Excel
+  const XLSX_TIPO = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const cArchivo = inp('file', {accept: `.xlsx,.csv,text/csv,${XLSX_TIPO}`});
+  const cSoloCambios = h('input', {type: 'checkbox', checked: true});
+  const cSoloValidas = h('input', {type: 'checkbox', checked: true});
+  let tablaArchivo = null;
+
   // ---- modo retiro
   const cRetiro = sel([['', '— elija un dato manual —'], ...activas.map((f) => [f.id, `${f.empresa} · ${f.modelo_clave} · ${f.plan} (${fmtD(f.man.registrado)})`])], '');
 
@@ -71,7 +80,7 @@ export function vCargar(el, D, opciones = {}) {
     document.getElementById('dl-mod').replaceChildren(...[...new Set((cEmpresa.value.trim() ? reales.filter((r) => r.empresa === cEmpresa.value.trim()) : reales).map((r) => r.modelo_clave))].sort().map((v) => h('option', {value: v})));
   }
 
-  const comunes = () => ({v: 1, registrado_por: cQuien.value.trim(), registrado: hoy, motivo: cMotivo.value, fuente: cFuente.value.trim(), url: cUrl.value.trim(), fecha_dato: cFecha.value});
+  const comunes = () => ({v: 1, registrado_por: cQuien.value.trim() || (remoto ? 'por código' : ''), registrado: hoy, motivo: cMotivo.value, fuente: cFuente.value.trim(), url: cUrl.value.trim(), fecha_dato: cFecha.value});
   const numero = (c) => (c.value === '' ? null : Number(c.value));
 
   function construir() {
@@ -99,7 +108,102 @@ export function vCargar(el, D, opciones = {}) {
     return {...k, tipo: 'retiro', id: cRetiro.value};
   }
 
+  function bajarPlantilla(empresa) {
+    const filas = filasPlantilla(reales, empresa);
+    descargar(empresa ? `precios-${slug(empresa)}.xlsx` : 'plantilla-precios.xlsx', crearXlsx(HOJAS_PLANTILLA(filas, filas.length - 1)), XLSX_TIPO);
+  }
+
+  async function leerArchivo(archivo) {
+    if (archivo.size > 2 * 1024 * 1024) throw new Error('El archivo pesa más de 2 MB.');
+    const buf = await archivo.arrayBuffer();
+    if (/\.csv$/i.test(archivo.name) || /csv|text\/plain/.test(archivo.type)) {
+      let texto = new TextDecoder('utf-8').decode(buf);
+      if (texto.includes('\ufffd')) texto = new TextDecoder('windows-1252').decode(buf); // CSV de Excel en español
+      return leerCsv(texto);
+    }
+    return leerXlsx(buf);
+  }
+
+  const ETIQUETA = {ok: ['Correcta', 'g'], aviso: ['Con aviso', 'w'], error: ['Con error', 'bd'], sin_cambio: ['Sin cambios', 'b']};
+  function actualizarExcel() {
+    resultado.replaceChildren();
+    if (!tablaArchivo) { salida.replaceChildren(h('p', {class: 'note'}, 'Elija un archivo para ver la revisión fila por fila.')); return; }
+    if (tablaArchivo.error) { salida.replaceChildren(alerta(tablaArchivo.error)); return; }
+    if (tablaArchivo.faltan.length) { salida.replaceChildren(alerta(`Faltan columnas en el archivo: ${tablaArchivo.faltan.join(', ')}. Use la plantilla.`)); return; }
+    const quien = cQuien.value.trim() || (remoto ? 'por código' : '');
+    const entorno = {ctx: ctx(), reales, nombresModelo: mapaModelos(D.rows), marcasMap: D.marcasMap || {}, marcasLista, hoy};
+    const op = {fuente: cFuente.value, motivo: cMotivo.value, confianza: cConf.value, fecha: cFecha.value || hoy, quien: quien || '(sin nombre)', soloCambios: cSoloCambios.checked};
+    const {resultados, resumen} = filasAEntradas(tablaArchivo, entorno, op);
+    const validas = resultados.filter((r) => r.entrada).map((r) => r.entrada);
+    const kids = [h('p', {class: 'note'}, `${resultados.length} filas leídas: ${resumen.ok} correctas, ${resumen.aviso} con aviso, ${resumen.error} con error, ${resumen.sin_cambio} sin cambios.`)];
+    if (resumen.sobran) kids.push(alerta(`El archivo tiene ${resumen.sobran} filas de más: el máximo es ${MAX_FILAS} por envío. Divida el archivo.`));
+    if (!quien) kids.push(alerta('Escriba su nombre en "Registrado por".'));
+    // Primero lo que requiere atención (errores, avisos, correctas); las filas sin cambios quedan plegadas.
+    const orden = {error: 0, aviso: 1, ok: 2};
+    const relevantes = resultados.filter((r) => r.estado !== 'sin_cambio').sort((x, y) => orden[x.estado] - orden[y.estado] || x.n - y.n);
+    const iguales = resultados.filter((r) => r.estado === 'sin_cambio');
+    const tablaFilas = (lista, etiqueta) => h('div', {class: 'tw', role: 'region', 'aria-label': etiqueta, tabindex: 0}, h('table', {}, h('thead', {}, h('tr', {}, ['Fila', 'Estado', 'Plan', 'Mensajes'].map((t) => h('th', {scope: 'col'}, t)))),
+      h('tbody', {}, lista.map((r) => h('tr', {}, h('td', {class: 'n'}, r.n), h('td', {}, h('span', {class: 'badge ' + ETIQUETA[r.estado][1]}, ETIQUETA[r.estado][0])), h('td', {}, r.etiqueta || '—'),
+        h('td', {}, ...r.errores.map((t) => h('div', {class: 'bd'}, t)), ...r.avisos.map((t) => h('div', {class: 'wn'}, t))))))));
+    if (relevantes.length) kids.push(tablaFilas(relevantes, 'Filas que cambian o tienen problemas'));
+    if (iguales.length) kids.push(h('details', {}, h('summary', {}, `Ver las ${iguales.length} filas sin cambios (se ignoran)`), tablaFilas(iguales, 'Filas sin cambios')));
+    if (resumen.error) kids.push(h('div', {class: 'ctrls'}, h('button', {class: 'b', type: 'button', onclick: () => descargar('filas-con-error.csv', aCSV(resultados.filter((r) => r.estado === 'error').map((r) => ({fila: r.n, plan: r.etiqueta, mensajes: r.errores.join(' | ')})),
+      [{k: 'fila', t: 'Fila'}, {k: 'plan', t: 'Plan'}, {k: 'mensajes', t: 'Mensajes'}]), 'text/csv;charset=utf-8')}, 'Descargar informe de errores')));
+    if (validas.length) {
+      const permitido = !resumen.sobran && Boolean(quien) && (!resumen.error || cSoloValidas.checked);
+      kids.push(h('label', {class: 'cf chk'}, cSoloValidas, h('span', {}, 'Enviar solo las filas correctas (las demás se descartan)')), ...panelEnvio(validas, permitido));
+    } else if (!resumen.error) kids.push(h('p', {class: 'note'}, 'No hay cambios que enviar.'));
+    salida.replaceChildren(...kids);
+  }
+
+  // ---- envío: sin GitHub (con código personal) o con GitHub
+  let remoto = false;
+  const cCodigo = inp('password', {value: leer('mx-codigo'), placeholder: 'Su código personal', autocomplete: 'off'});
+  const cRecordar = h('input', {type: 'checkbox', checked: Boolean(leer('mx-codigo'))});
+  const resultado = h('div', {class: 'resultado', 'aria-live': 'polite'});
+  const alerta = (t) => h('p', {class: 'warn', role: 'alert'}, t);
+
+  async function enviar(entradas) {
+    const codigo = cCodigo.value.trim();
+    if (codigo.length < 8) { resultado.replaceChildren(alerta('Escriba su código personal.')); return; }
+    guardar('mx-codigo', cRecordar.checked ? codigo : '');
+    resultado.replaceChildren(h('p', {class: 'note'}, 'Enviando…'));
+    let r, j = {};
+    try {
+      r = await fetch('api/cargar', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({codigo, entradas})});
+      j = await r.json().catch(() => ({}));
+    } catch { resultado.replaceChildren(alerta('No hay conexión con el sitio. Intente de nuevo.')); return; }
+    if (r.ok) {
+      const seguro = /^https:\/\/github\.com\//.test(j.url || '');
+      resultado.replaceChildren(h('div', {class: 'note'}, h('strong', {}, `Enviado: ${j.enviados} ${j.enviados === 1 ? 'dato' : 'datos'}. `), 'Solicitud ', seguro ? h('a', {href: j.url, target: '_blank', rel: 'noopener noreferrer'}, '#' + j.numero) : '#' + j.numero,
+        ' pendiente de revisión. Aparecerá en el sitio unos minutos después de aprobarse.'),
+        ...(j.avisos?.length ? [h('ul', {class: 'note'}, j.avisos.flatMap((a) => a.avisos.map((t) => h('li', {}, `Fila ${a.indice + 1}: ${t}`))))] : []));
+    } else if (r.status === 422) {
+      resultado.replaceChildren(h('div', {class: 'warn', role: 'alert'}, h('strong', {}, 'Hay datos que no pasan la validación:'), h('ul', {}, (j.errores || []).flatMap((x) => x.errores.map((t) => h('li', {}, `Fila ${x.indice + 1}: ${t}`))))));
+    } else resultado.replaceChildren(alerta(j.error || 'No se pudo enviar. Intente de nuevo.'));
+  }
+
+  // Botones de envío para una o varias entradas ya validadas.
+  function panelEnvio(entradas, ok) {
+    const archivo = entradas.length === 1 ? nombreArchivo(entradas[0]) : nombreArchivoLote(entradas);
+    const u = urlGitHub(archivo, entradas);
+    const enlace = h('a', {class: 'b' + (remoto ? '' : ' boton') + (ok ? '' : ' off'), href: ok ? (u.larga ? u.vacia : u.url) : null, target: '_blank', rel: 'noopener noreferrer', 'aria-disabled': ok ? false : 'true',
+      onclick: ok && u.larga ? () => { navigator.clipboard && navigator.clipboard.writeText(u.json); } : null}, u.larga ? 'Copiar JSON y abrir GitHub' : 'Abrir en GitHub');
+    const copiar = h('button', {class: 'b', type: 'button', disabled: !ok, onclick: (ev) => { navigator.clipboard && navigator.clipboard.writeText(u.json); ev.target.textContent = '¡Copiado!'; setTimeout(() => { ev.target.textContent = 'Copiar JSON'; }, 1800); }}, 'Copiar JSON');
+    const github = [h('div', {class: 'ctrls'}, enlace, copiar), h('p', {class: 'note'}, 'En GitHub elija "Create a new branch for this commit and start a pull request" y pulse "Commit". Al unir el PR, el sitio se actualiza solo.')];
+    const nodos = [h('details', {}, h('summary', {}, `Ver el archivo que se creará (${archivo})`), h('pre', {}, h('code', {}, u.json)))];
+    if (!remoto) return [...nodos, ...github];
+    cCodigo.id = 'f-codigo';
+    return [...nodos,
+      h('div', {class: 'campo'}, h('label', {for: 'f-codigo'}, 'Su código personal'), cCodigo, h('label', {class: 'cf chk'}, cRecordar, h('span', {}, 'Recordar en este dispositivo'))),
+      h('div', {class: 'ctrls'}, h('button', {class: 'b boton', type: 'button', disabled: !ok, onclick: () => enviar(entradas)}, entradas.length === 1 ? 'Enviar para revisión' : `Enviar ${entradas.length} filas para revisión`)),
+      resultado, h('p', {class: 'note'}, 'Se crea una solicitud que el administrador revisa antes de publicarla.'),
+      h('details', {}, h('summary', {}, 'Tengo acceso a GitHub: crear el archivo yo mismo'), ...github)];
+  }
+
   function actualizar() {
+    if (modo === 'excel') { actualizarExcel(); return; }
+    resultado.replaceChildren();
     guardar('mx-quien', cQuien.value);
     const e = construir();
     const {errores, avisos} = validarEntrada(e, ctx());
@@ -120,15 +224,7 @@ export function vCargar(el, D, opciones = {}) {
         pos >= 0 ? `Quedaría en el puesto ${pos + 1} de ${ranking.length} para ${f.modelo_clave}.` : 'No entra al ranking (falta cuota, n.° de cuotas o tasa del euro).');
       kids.push(h('p', {class: 'note'}, lineas.join(' ')));
     }
-    const archivo = nombreArchivo(e);
-    const u = urlGitHub(archivo, [e]);
-    kids.push(h('details', {}, h('summary', {}, `Ver el archivo que se creará (${archivo})`), h('pre', {}, h('code', {}, u.json))));
-    const ok = !errores.length;
-    const enlace = h('a', {class: 'b boton' + (ok ? '' : ' off'), href: ok ? (u.larga ? u.vacia : u.url) : null, target: '_blank', rel: 'noopener noreferrer', 'aria-disabled': ok ? false : 'true',
-      onclick: ok && u.larga ? () => { navigator.clipboard && navigator.clipboard.writeText(u.json); } : null}, u.larga ? 'Copiar JSON y abrir GitHub' : 'Abrir en GitHub');
-    const copiar = h('button', {class: 'b', type: 'button', disabled: !ok, onclick: (ev) => { navigator.clipboard && navigator.clipboard.writeText(u.json); ev.target.textContent = '¡Copiado!'; setTimeout(() => { ev.target.textContent = 'Copiar JSON'; }, 1800); }}, 'Copiar JSON');
-    kids.push(h('div', {class: 'ctrls'}, enlace, copiar));
-    kids.push(h('p', {class: 'note'}, 'En GitHub elija "Create a new branch for this commit and start a pull request" y pulse "Commit". Al unir el PR, el sitio se actualiza solo.'));
+    kids.push(...panelEnvio([e], !errores.length));
     salida.replaceChildren(...kids);
   }
 
@@ -144,6 +240,17 @@ export function vCargar(el, D, opciones = {}) {
         h('div', {class: 'fila'}, campo('moni', 'Moneda de la inicial', cMonI), campo('monc', 'Moneda de la cuota', cMonC)),
         h('div', {class: 'fila'}, campo('inicial', 'Inicial', cInicial), campo('cuota', 'Cuota', cCuota)),
         campo('conf', 'Confianza', cConf), ...comun);
+    } else if (modo === 'excel') {
+      const selEmp = sel([['', '— elija una empresa —'], ...empresas.map((e) => [e, e])], '');
+      cuerpo.replaceChildren(
+        h('p', {class: 'note'}, 'Para cargar muchos precios a la vez. Descargue la plantilla (o los precios actuales de una empresa, y cambie solo lo que cambió), llénela en Excel y súbala aquí. Cada fila se revisa antes de enviar.'),
+        h('div', {class: 'ctrls'}, h('button', {class: 'b', type: 'button', onclick: () => bajarPlantilla(null)}, 'Descargar plantilla vacía'), selEmp,
+          h('button', {class: 'b', type: 'button', onclick: () => { if (selEmp.value) bajarPlantilla(selEmp.value); else selEmp.focus(); }}, 'Descargar precios actuales de esa empresa')),
+        campo('archivo', 'Archivo Excel (.xlsx) o CSV', cArchivo),
+        h('div', {class: 'fila'}, campo('motivo', 'Motivo', cMotivo), campo('fecha', 'Fecha del dato (si la fila no la trae)', cFecha)),
+        campo('fuente', 'Fuente para las filas que no la traen', cFuente, 'Ej.: Lista de precios que envió la empresa por WhatsApp el 21-oct, guardada en Drive.'),
+        h('div', {class: 'fila'}, campo('conf', 'Confianza (si la fila no la trae)', cConf), campo('quien', 'Registrado por', cQuien)),
+        h('label', {class: 'cf chk'}, cSoloCambios, h('span', {}, 'Ignorar las filas que no cambian el precio')));
     } else if (modo === 'empresa') {
       cuerpo.replaceChildren(
         campo('e-empresa', 'Nombre de la empresa', cE.empresa), campo('e-neg', 'Modelo de negocio', cE.modelo_negocio),
@@ -161,11 +268,17 @@ export function vCargar(el, D, opciones = {}) {
   [cEmpresa, cModelo].forEach((c) => c.addEventListener('input', () => { cPlan.dataset.tocado = ''; refrescarPlanes(); actualizar(); }));
   cPlan.addEventListener('change', () => { cPlan.dataset.tocado = '1'; cMarca.dataset.tocado = ''; refrescarPlanes(); actualizar(); });
   cMarca.addEventListener('input', () => { cMarca.dataset.tocado = '1'; });
-  [cMotivo, cFecha, cFuente, cUrl, cConf, cQuien, cNota, cCuotas, cFrec, cMarca, cInicial, cCuota, cMonI, cMonC, cRetiro, ...Object.values(cE)].forEach((c) => {
+  cArchivo.addEventListener('change', async () => {
+    const f = cArchivo.files[0];
+    if (!f) { tablaArchivo = null; actualizar(); return; }
+    try { tablaArchivo = leerTabla(await leerArchivo(f)); } catch (e) { tablaArchivo = {error: e.message || 'No se pudo leer el archivo.'}; }
+    actualizar();
+  });
+  [cMotivo, cFecha, cFuente, cUrl, cConf, cQuien, cNota, cSoloCambios, cSoloValidas, cCuotas, cFrec, cMarca, cInicial, cCuota, cMonI, cMonC, cRetiro, ...Object.values(cE)].forEach((c) => {
     c.addEventListener('input', actualizar); c.addEventListener('change', actualizar);
   });
 
-  const tabs = [['precio', 'Actualizar o añadir precio'], ['empresa', 'Empresa nueva'], ['retiro', 'Retirar un dato manual']];
+  const tabs = [['precio', 'Actualizar o añadir precio'], ['excel', 'Subir Excel'], ['empresa', 'Empresa nueva'], ['retiro', 'Retirar un dato manual']];
   const barra = h('div', {class: 'sub', role: 'group', 'aria-label': 'Tipo de carga'}, tabs.map(([k, t]) => h('button', {type: 'button', class: 'b' + (k === modo ? ' on' : ''), 'aria-pressed': String(k === modo), onclick: (ev) => {
     modo = k; barra.querySelectorAll('button').forEach((b) => { const on = b === ev.currentTarget; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); dibujar();
   }}, t)));
@@ -204,4 +317,5 @@ export function vCargar(el, D, opciones = {}) {
     dl('dl-emp', empresas), h('datalist', {id: 'dl-mod'}), dl('dl-marca', marcasLista), barra, cuerpo, salida), historial);
   refrescarPlanes();
   dibujar();
+  fetch('api/estado').then((r) => r.json()).then((j) => { if (j.habilitado) { remoto = true; actualizar(); } }).catch(() => {});
 }
