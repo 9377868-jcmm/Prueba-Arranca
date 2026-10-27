@@ -98,7 +98,7 @@ function construirBarra() {
   barra.man = h('input', {type: 'checkbox'}); barra.man.addEventListener('change', () => cambiarGlobal({man: barra.man.checked ? '' : '0'}));
   barra.chips = h('div', {class: 'chips-f'});
   const cont = $('filtros-cont');
-  cont.append(h('div', {class: 'fgrid'}, campo('Marca', barra.marca), campo('Empresa', barra.emp), numIn('imax', 'Inicial máx. (US$)'), numIn('cmax', 'Cuota mensual máx. (US$)'), numIn('eur', 'Tasa € → US$ (vacío = BCV)'),
+  cont.append(h('div', {class: 'fgrid'}, campo('Marca', barra.marca), campo('Empresa', barra.emp), numIn('imax', 'Inicial máx. (US$)'), numIn('cmax', 'Cuota mensual máx. (US$)'), numIn('eur', 'Tasa € → US$ (vacío = la del corte de cada precio)'),
     h('label', {class: 'cf chk'}, barra.conf, h('span', {}, 'Solo confianza Alta/Media')), h('label', {class: 'cf chk'}, barra.man, h('span', {}, 'Incluir datos manuales'))), barra.chips);
   if (matchMedia('(max-width: 640px)').matches) $('filtros').open = false;
   sincronizarBarra();
@@ -106,7 +106,7 @@ function construirBarra() {
 function sincronizarBarra() {
   barra.marca.value = S.marca || ''; barra.emp.value = S.emp || '';
   ['imax', 'cmax', 'eur'].forEach((k) => { if (document.activeElement !== barra[k]) barra[k].value = S[k] ?? ''; });
-  barra.eur.placeholder = D.tasaActual ? 'BCV ' + fmtT(D.tasaActual) : 'p. ej. 1,08';
+  barra.eur.placeholder = D.tasaActual ? 'BCV más reciente ' + fmtT(D.tasaActual) : 'p. ej. 1,08';
   barra.conf.checked = S.conf === '1'; barra.man.checked = S.man !== '0';
   const chips = [];
   const chip = (t, k) => h('button', {type: 'button', class: 'chip', onclick: () => cambiarGlobal({[k]: k === 'man' ? '' : null}, true), 'aria-label': `Quitar filtro: ${t}`}, t, ' ×');
@@ -176,7 +176,7 @@ function vMejores(el) {
       {t: 'Inicial', k: 'u_inicial', n: true, f: (r) => monto(r, 'inicial')},
       {t: 'Brecha', n: true, m: true, f: (r) => r.brecha_total === 0 ? 'mejor' : '+' + fmtN(r.brecha_total) + ' %'},
       {t: 'Confianza', m: true, f: conf}, {t: 'Fuente', m: true, f: (r) => enlace(r.url, r.fuente || '—')}];
-    const kids = [h('h2', {}, S.modelo), h('p', {class: 'note'}, `${ps.length} planes de ${new Set(ps.map((p) => p.empresa)).size} empresas. Orden: mejor equilibrio entre costo total, cuota mensual e inicial según sus prioridades.`)];
+    const kids = [h('h2', {}, S.modelo), h('p', {class: 'note'}, `${ps.length} planes de ${new Set(ps.map((p) => p.empresa)).size} empresas. Orden: mejor equilibrio entre costo total, cuota mensual e inicial según sus prioridades. "Cuota/mes" es la cuota llevada a 30 días (quincenal o cada 14 días × 2,14; semanal × 4,29; mensual × 1), no la cuota de cada periodo.`)];
     const lider = ranking[0];
     if (lider && lider.origen === 'manual') kids.push(h('p', {class: 'note'}, `El primer lugar es un dato manual del ${fmtD(lider.fecha_dato)} (confianza ${lider.confianza}); verifíquelo con la empresa.`));
     if (ranking.length) {
@@ -244,7 +244,7 @@ function vCambios(el) {
   const base = cambios(datos().rows);
   const draw = () => {
     const q = (S.q || '').toLowerCase();
-    const rows = base.filter((r) => !q || (r.empresa + ' ' + r.modelo).toLowerCase().includes(q)).sort((a, b) => b.fecha_ahora.localeCompare(a.fecha_ahora));
+    const rows = base.filter((r) => !q || (r.empresa + ' ' + r.modelo + ' ' + (r.modelo_clave || '')).toLowerCase().includes(q)).sort((a, b) => b.fecha_ahora.localeCompare(a.fecha_ahora));
     const sg = (v) => v === null ? '—' : (v > 0 ? '+' : '') + fmtN(v);
     const cls = (v) => 'n ' + (v > 0 ? 'up' : v < 0 ? 'dn' : '');
     const cols = [{t: 'Empresa', k: 'empresa'}, {t: 'Modelo', k: 'modelo'}, {t: 'Plan', k: 'plan', m: true}, {t: 'Antes', m: true, f: (r) => fmtD(r.fecha_antes)}, {t: 'Ahora', f: (r) => fmtD(r.fecha_ahora)},
@@ -267,7 +267,7 @@ function vCorte(el) {
   selF.addEventListener('change', () => set({frec: selF.value}, draw));
   const draw = () => {
     const q = (S.q || '').toLowerCase();
-    let rows = vig.map((r) => convertir(r, tasas())).filter((r) => (!S.frec || r.frecuencia === S.frec) && (S.imax == null || r.u_inicial === null || r.u_inicial <= S.imax) && (S.cmax == null || r.u_cuota_m === null || r.u_cuota_m <= S.cmax) && (!q || [r.empresa, r.marca, r.modelo, r.plan].join(' ').toLowerCase().includes(q)));
+    let rows = vig.map((r) => convertir(r, tasas())).filter((r) => (!S.frec || r.frecuencia === S.frec) && (S.imax == null || r.u_inicial === null || r.u_inicial <= S.imax) && (S.cmax == null || r.u_cuota_m === null || r.u_cuota_m <= S.cmax) && (!q || [r.empresa, r.marca, r.modelo, r.modelo_clave, r.plan].join(' ').toLowerCase().includes(q)));
     if (S.sort) rows = sortable(rows, S.sort, S.dir);
     const cols = [{t: 'Empresa', k: 'empresa', f: (r) => h('span', {}, r.empresa, ' ', ...insMarca(r))}, {t: 'Marca', k: 'marca_norm', m: true, f: marcaDe}, {t: 'Modelo', k: 'modelo'},
       {t: 'Inicial', k: 'inicial', n: true, f: (r) => r.inicial !== null ? `${SIMBOLO[r.moneda_inicial]} ${fmtN(r.inicial)}` : (r.inicial_txt || '—')}, {t: 'Monedas', k: 'moneda_norm', m: true, f: monedas},
@@ -302,7 +302,7 @@ function vEmpresas(el) {
     {t: 'Modelo de negocio', k: 'modelo_negocio'}, {t: 'Marcas', k: 'marcas', m: true}, {t: 'Frecuencia', k: 'frecuencia', m: true}, {t: 'Plazos', k: 'plazos', m: true}, {t: 'Gastos adm.', k: 'gastos_adm'},
     {t: 'Cómo publica', k: 'como_publica', m: true}, {t: 'Confianza', f: conf}];
   const cand = D.candidatos.candidatos || [];
-  el.append(...[h('div', {class: 'card'}, h('h2', {}, 'Empresas seguidas'), h('p', {class: 'note'}, 'Cada actualización quincenal busca nuevos actores del mercado; los recién incorporados llevan la etiqueta "Nuevo".'), hintMovil(), tabla(cols, D.empresas, {etiqueta: 'Empresas seguidas'})),
+  el.append(...[h('div', {class: 'card'}, h('h2', {}, 'Empresas seguidas'), h('p', {class: 'note'}, `${D.empresas.length} empresas seguidas, ${new Set(D.vigAll.map((x) => x.empresa)).size} con precios vigentes (corte más datos manuales). Cada actualización quincenal busca nuevos actores del mercado; los recién incorporados llevan la etiqueta "Nuevo".`), hintMovil(), tabla(cols, D.empresas, {etiqueta: 'Empresas seguidas'})),
     cand.length > 0 && h('div', {class: 'card'}, h('h2', {}, 'Actores en observación'), h('p', {class: 'note'}, 'Detectados, pero sin precios publicados todavía.'),
       tabla([{t: 'Nombre', k: 'nombre'}, {t: 'Detectado', f: (c) => fmtD(c.detectado)}, {t: 'Nota', k: 'nota'}, {t: 'Fuente', f: (c) => enlace(c.url, c.fuente || '—')}], cand, {etiqueta: 'Actores en observación'}))].filter(Boolean));
 }
@@ -328,12 +328,12 @@ function go(tab, extra = {}) {
 
 // ---------- arranque ----------
 function cabecera() {
-  const r = resumen(D.rows), dias = Math.max(0, Math.floor((Date.now() - new Date(D.ult + 'T00:00:00Z')) / 864e5));
+  const r = resumen(D.rows), vA = D.vigAll, dias = Math.max(0, Math.floor((Date.now() - new Date(D.ult + 'T00:00:00Z')) / 864e5));
   const nm = D.vigAll.filter((x) => x.origen === 'manual').length;
-  $('takeaway').textContent = `Corte del ${fmtD(r.ultimo_corte)} · ${fmtN(r.planes)} planes · ${r.empresas} empresas · ${r.modelos} modelos` + (r.cortes > 1 ? ` · ${r.cambios} cambios de precio` : '');
+  $('takeaway').textContent = `Corte del ${fmtD(r.ultimo_corte)} · ${fmtN(vA.length)} planes${nm ? ` (${fmtN(r.planes)} del corte + ${nm} manual${nm === 1 ? '' : 'es'})` : ''} · ${new Set(vA.map((x) => x.empresa)).size} empresas con precios · ${new Set(vA.map((x) => x.modelo_clave)).size} modelos` + (r.cortes > 1 ? ` · ${r.cambios} cambios de precio` : '');
   const nuevos = D.empresas.filter(esNuevo).length;
   $('chips').replaceChildren(...[h('span', {class: 'badge ' + (dias > 20 ? 'w' : 'g')}, `Datos del ${fmtD(D.ult)} (hace ${dias} ${dias === 1 ? 'día' : 'días'})`),
-    nuevos > 0 && h('span', {class: 'badge g'}, `${nuevos} ${nuevos === 1 ? 'actor nuevo' : 'actores nuevos'}`), nm > 0 && h('span', {class: 'badge m'}, `${nm} ${nm === 1 ? 'dato manual vigente' : 'datos manuales vigentes'}`)].filter(Boolean));
+    nuevos > 0 && h('span', {class: 'badge g'}, `${nuevos} ${nuevos === 1 ? 'actor nuevo' : 'actores nuevos'}`), nm > 0 && h('a', {class: 'badge m', href: '#cargar', title: 'Ver cuáles son en Cargar dato', onclick: (e) => { e.preventDefault(); go('cargar'); }}, `${nm} ${nm === 1 ? 'dato manual vigente' : 'datos manuales vigentes'} · ver`)].filter(Boolean));
 }
 
 async function main() {
