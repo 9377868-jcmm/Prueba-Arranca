@@ -13,6 +13,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-appl
 h1{font-family:Georgia,serif;font-weight:400;font-size:2rem;margin:.5rem 0}
 h2{font-size:1.35rem;margin:2.5rem 0 .5rem;padding-top:.5rem;border-top:1px solid var(--line)}
 h3{font-size:1.05rem;margin:1.5rem 0 .25rem}
+h4{font-size:.98rem;margin:1.25rem 0 .25rem}
 p,li{max-width:70ch}
 a{color:var(--acc)}
 code{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:.05rem .35rem;font-size:.9em}
@@ -75,13 +76,13 @@ th{background:var(--panel)}
 </ol>
 
 <h2 id="pestanas">3. Filtros y pestañas</h2>
-<p>Arriba de las pestañas hay un resumen: fecha del último corte, número de cortes, planes, empresas, modelos y cambios. La etiqueta verde indica la antigüedad de los datos y pasa a ámbar si superan 20 días.</p>
+<p>Arriba de las pestañas hay un resumen: fecha del último corte, planes vigentes (si hay datos manuales, se indica cuántos son del corte y cuántos manuales), empresas con precios, modelos y cambios. Si hay datos manuales vigentes aparece un aviso «N datos manuales vigentes · ver» que lleva a la pestaña Cargar dato. La etiqueta verde indica la antigüedad de los datos y pasa a ámbar si superan 20 días.</p>
 
 <h3>3.0 Barra de filtros (común a todas las pestañas)</h3>
 <p>Debajo de las pestañas está la barra de filtros. Lo que elija ahí se aplica a todas las vistas y se conserva al cambiar de pestaña. En el celular aparece plegada: toque «Filtros» para abrirla. Los filtros activos se ven como etiquetas con una «×» para quitarlos uno a uno, o «Limpiar todo».</p>
 <ul>
 <li><strong>Marca</strong>: elige una marca (Empire Keeway, Toro, Bera, Haojue…). Las variantes del mismo nombre ya están unificadas (por ejemplo, «Empire» y «Empire Keeway»). Los planes sin marca indicada se agrupan en «Sin marca indicada».</li>
-<li><strong>Empresa</strong>, <strong>Inicial máx.</strong>, <strong>Cuota mensual máx.</strong> (en US$), <strong>Tasa € → US$</strong> y <strong>Solo confianza Alta/Media</strong>.</li>
+<li><strong>Empresa</strong>, <strong>Inicial máx.</strong>, <strong>Cuota mensual máx.</strong> (en US$), <strong>Tasa € → US$</strong> y <strong>Solo confianza Alta/Media</strong>. La tasa vacía significa «la del corte de cada precio» (BCV); el campo muestra de fondo la más reciente. Si escribe una, esa manda para todos los planes.</li>
 <li><strong>Incluir datos manuales</strong>: activo por defecto; desmárquelo para ver solo datos recolectados.</li>
 <li>Debajo hay un contador: «N planes de M modelos con estos filtros».</li>
 </ul>
@@ -93,13 +94,13 @@ th{background:var(--panel)}
 <tr><th>Control</th><th>Qué hace</th></tr>
 <tr><td>Filtrar modelos</td><td>Busca modelos por nombre en la tabla resumen.</td></tr>
 <tr><td>Incluir modelos de una sola empresa</td><td>Por defecto la tabla resumen muestra solo modelos que ofrecen 2 o más empresas (los únicos que se pueden comparar). Marque la casilla para verlos todos.</td></tr>
-<tr><td>Tasa € → US$ (barra de filtros)</td><td>Sin ella, los planes en euros (Glik) no entran al ranking. Se llena sola si <code>data/tasas.json</code> trae <code>eur_usd</code> para el corte.</td></tr>
-<tr><td>Deslizadores Costo total / Cuota / Inicial</td><td>Definen cuánto pesa cada criterio en el «mejor equilibrio» (se muestra el porcentaje). Por defecto 50 / 30 / 20 %. Si solo le importa la cuota, suba ese deslizador y baje los otros.</td></tr>
+<tr><td>Tasa € → US$ (barra de filtros)</td><td>Vacía, cada plan usa la tasa BCV de su corte (<code>data/tasas.json</code>). Si no hay tasa disponible, los planes con euros no entran al ranking. Si escribe una, se usa esa en todos.</td></tr>
+<tr><td>Deslizadores Costo total / Cuota / Inicial</td><td>Definen cuánto pesa cada criterio en el «mejor equilibrio» (se muestra el porcentaje). Por defecto 50 / 30 / 20 %. Si solo le importa la cuota, suba ese deslizador y baje los otros. No tienen que sumar 100 %: el cálculo los normaliza. El botón «Restablecer» vuelve a 50 / 30 / 20.</td></tr>
 </table></div>
 <p><strong>Tabla resumen por modelo.</strong> Solo muestra modelos con al menos un plan completo. Las columnas son: número de empresas, mejor equilibrio, más barato (costo total), menor cuota por mes y menor inicial. Una franja naranja a la izquierda indica que Arranca lidera ese modelo.</p>
 <p><strong>Detalle del modelo.</strong> Al tocar una fila, o elegirlo en la lista «Modelo», aparece:</p>
 <ul>
-<li><strong>Ranking</strong> de planes de mejor a peor, con inicial, cuota por mes, costo total, <em>brecha</em> (cuánto más caro que el más barato, en %) y confianza.</li>
+<li><strong>Ranking</strong> de planes de mejor a peor, con inicial, cuota por mes, costo total, <em>brecha</em> (cuánto más caro que el más barato, en %) y confianza. «Cuota/mes» es la cuota llevada a 30 días (quincenal o cada 14 días × 2,14; semanal × 4,29; mensual × 1), no la cuota de cada periodo.</li>
 <li><strong>Etiquetas</strong>: <span class="b ok">Mejor equilibrio</span> <span class="b ac">Más barato</span> <span class="b ac">Menor inicial</span> <span class="b ac">Menor cuota</span>.</li>
 <li><strong>Gráfico de barras</strong> del costo total por plan (verde: el mejor; naranja: Arranca).</li>
 <li><strong>Datos manuales</strong>: se reconocen por la etiqueta <span class="b wn">Manual · fecha</span> y una trama en la fila. Si el primer lugar es un dato manual, se avisa.</li>
@@ -109,19 +110,19 @@ th{background:var(--panel)}
 </ul>
 
 <h3>3.2 Evolución</h3>
-<p>Línea de tiempo de la inicial en dólares por empresa para un modelo. Toque el nombre de una empresa en la leyenda (lado derecho) para ocultarla o mostrarla. Pase el cursor o toque un punto para ver fecha y monto. Debajo, la tabla de cuotas por corte (hasta los últimos 8). Incluye datos históricos de prensa (2024 a 2026); los datos cargados a mano se ven como puntos huecos.</p>
+<p>Línea de tiempo de la inicial en dólares por empresa para un modelo. Toque el nombre de una empresa en la leyenda para ocultarla o mostrarla (en el celular la leyenda son chips tocables).  Pase el cursor o toque un punto para ver fecha y monto. Debajo, la tabla de cuotas por corte (hasta los últimos 8). Incluye datos históricos de prensa (2024 a 2026); los datos cargados a mano se ven como puntos huecos.</p>
 
 <h3>3.3 Cambios de precio</h3>
 <p>Compara cada plan con su observación anterior y muestra solo los que cambiaron. Rojo: subió. Verde: bajó. Solo compara precios en la misma moneda. Con un único corte quincenal aún no hay mucho que ver: se llena desde el segundo corte.</p>
 
 <h3>3.4 Último corte</h3>
-<p>Tabla completa de planes del último corte. Puede buscar por modelo o marca, filtrar por empresa y frecuencia, y ordenar tocando el encabezado (otro toque invierte el orden). «Ver más» carga 200 filas adicionales; «Limpiar filtros» reinicia todo. Los topes de inicial y cuota de «Mejores planes» también se aplican aquí.</p>
+<p>Tabla completa de planes del último corte. Puede buscar por empresa, marca, modelo o plan (también por el nombre unificado del modelo), filtrar por empresa y frecuencia, y ordenar tocando el encabezado (otro toque invierte el orden). «Ver más» carga 200 filas adicionales; «Limpiar filtros» reinicia todo. Los topes de inicial y cuota de «Mejores planes» también se aplican aquí.</p>
 
 <h3>3.5 Arranca</h3>
 <p>Muestra, por cada modelo que Arranca ofrezca, su posición en el ranking (por ejemplo «3 de 5»), su costo total, el mejor del mercado y la brecha. Mientras Arranca no tenga planes registrados, la pestaña lo dice así: el sistema no inventa cifras. Tocar una fila lleva al detalle del modelo.</p>
 
 <h3>3.6 Cargar dato</h3>
-<p>Sirve para registrar a mano un precio cuando una empresa no publicó a tiempo o su información no se puede consultar en línea, para crear una empresa nueva o un modelo/plan nuevo. No hace falta tocar archivos: el formulario prepara todo y abre GitHub.</p>
+<p>Sirve para registrar a mano un precio cuando una empresa no publicó a tiempo o su información no se puede consultar en línea, para crear una empresa nueva o un modelo/plan nuevo. No hace falta tocar archivos: el formulario prepara todo y lo envía por código personal o abre GitHub. Tiene cuatro modos (pestañas internas): <em>Actualizar o añadir precio</em>, <em>Subir Excel</em>, <em>Empresa nueva</em> y <em>Retirar un dato manual</em>.</p>
 <ol>
 <li>Elija el tipo: <em>Actualizar o añadir precio</em>, <em>Empresa nueva</em> o <em>Retirar un dato manual</em>.</li>
 <li><strong>Precio</strong>: escriba la empresa y el modelo (se autocompletan). Elija un plan existente para cambiar su precio, o «Plan nuevo…» e indique n.º de cuotas y frecuencia. Si el modelo no existe, queda registrado como modelo nuevo. Complete marca, inicial y cuota, y elija <strong>la moneda de la inicial</strong> (por defecto US$) y <strong>la moneda de la cuota</strong> (por defecto €). La vista previa muestra cuánto es en US$ y con qué tasa.</li>
@@ -133,14 +134,21 @@ th{background:var(--panel)}
 <div class="note"><strong>Qué pasa con un dato manual.</strong> Aparece con la etiqueta «Manual» en los rankings, el último corte y las exportaciones (columna Origen). Vence a los 30 días (máximo 45) o en cuanto un corte real traiga el mismo plan con fecha igual o posterior: el dato real siempre gana. No entra a «Cambios de precio» ni a los resúmenes del corte; en «Evolución» aparece como un punto hueco (y «(manual)» en la tabla de cuotas) en la fecha del dato. Para retirarlo antes, use «Retirar un dato manual».</div>
 <div class="note"><strong>Nada se pierde.</strong> Cada dato manual queda guardado para siempre en el repositorio (carpeta <code>data/manual</code>, con el historial de Git), aunque venza. Al pie de «Cargar dato», la tabla «Datos manuales registrados» lista todos con su estado (vigente, vencido, cubierto por el corte real, reemplazado o retirado), permite descargarlos en CSV o JSON y tiene un botón «Renovar» que precarga el formulario con el mismo plan para confirmar el precio de nuevo. Las fichas de empresas cargadas a mano no vencen.</div>
 
+<h4 id="excel">Subir Excel (carga de muchos precios)</h4>
+<ol>
+<li>En el modo <strong>Subir Excel</strong>, descargue la <strong>plantilla vacía</strong>, o elija una empresa y descargue <strong>sus precios actuales</strong> (así solo cambia lo que cambió).</li>
+<li>Llene el archivo en Excel. La plantilla trae listas desplegables (frecuencia, monedas) y una hoja de instrucciones.</li>
+<li>Súbalo (<code>.xlsx</code> o <code>.csv</code>; máximo 2 MB y 200 filas por envío). Cada fila se revisa y se marca: <span class="b ok">Correcta</span>, <span class="b wn">Con aviso</span>, <span class="b bd">Con error</span> o <span class="b">Sin cambios</span>. Las filas sin cambios se pliegan, y puede mostrar solo las que cambian o solo las válidas.</li>
+<li>Si hay errores, descargue el <strong>informe de errores</strong> (<code>filas-con-error.csv</code>), corrija y vuelva a subir. Las filas válidas se envían igual que un precio suelto: con código personal o por GitHub.</li>
+</ol>
 <h3>3.7 Empresas</h3>
-<p>Ficha de cada empresa: modelo de negocio, marcas, frecuencia, plazos, gastos administrativos, cómo publica sus precios y confianza. Etiquetas: <span class="b ok">Nuevo</span> (actor incorporado hace menos de 45 días o marcado «nuevo»), <span class="b" style="color:#d9480f">Propia</span> (Arranca), <span class="b wn">Próximamente</span>. Más abajo, «Actores en observación»: empresas detectadas que todavía no publican precios.</p>
+<p>Ficha de cada empresa: modelo de negocio, marcas, frecuencia, plazos, gastos administrativos, cómo publica sus precios y confianza. Etiquetas: <span class="b ok">Nuevo</span> (actor incorporado hace menos de 45 días o marcado «nuevo»), <span class="b" style="color:#d9480f">Propia</span> (Arranca), <span class="b wn">Próximamente</span>. El encabezado indica cuántas empresas se siguen y cuántas tienen precios vigentes (corte más datos manuales). Más abajo, «Actores en observación»: empresas detectadas que todavía no publican precios.</p>
 
 <h2 id="numeros">4. Cómo se calculan los números</h2>
 <div class="tw"><table>
 <tr><th>Cifra</th><th>Fórmula</th></tr>
 <tr><td>Costo total</td><td>inicial + cuota × número de cuotas. No incluye gastos administrativos.</td></tr>
-<tr><td>Cuota mensual equivalente</td><td>cuota × 30 ÷ días entre cuotas. Semanal = 7 días, quincenal o «cada 14 días» = 14, mensual = 30.</td></tr>
+<tr><td>Cuota mensual equivalente</td><td>cuota × 30 ÷ días entre cuotas. Semanal = 7 días (× 4,29), quincenal o «cada 14 días» = 14 (× 2,14), mensual = 30 (× 1).</td></tr>
 <tr><td>Brecha</td><td>(costo total del plan ÷ costo total del más barato − 1) × 100.</td></tr>
 <tr><td>Puntaje (mejor equilibrio)</td><td>Cada criterio se lleva a una escala de 0 (el mejor) a 1 (el peor) dentro del modelo y se promedia con los pesos de los deslizadores. Gana el puntaje más bajo.</td></tr>
 <tr><td>Conversión de euros</td><td>valor × tasa €→US$, componente por componente. Sin tasa, el plan queda «sin precio completo».</td></tr>
@@ -162,7 +170,7 @@ th{background:var(--panel)}
 <pre><code>https://…workers.dev/#mejores?modelo=NEW%20HORSE&amp;imax=600&amp;cmax=150&amp;conf=1&amp;wt=1&amp;wc=0&amp;wi=0</code></pre>
 <div class="tw"><table>
 <tr><th>Parámetro</th><th>Significado</th></tr>
-<tr><td><code>#mejores</code>, <code>#evolucion</code>, <code>#cambios</code>, <code>#corte</code>, <code>#arranca</code>, <code>#empresas</code></td><td>Pestaña.</td></tr>
+<tr><td><code>#mejores</code>, <code>#evolucion</code>, <code>#cambios</code>, <code>#corte</code>, <code>#arranca</code>, <code>#cargar</code>, <code>#empresas</code></td><td>Pestaña.</td></tr>
 <tr><td><code>modelo</code></td><td>Modelo elegido.</td></tr>
 <tr><td><code>imax</code>, <code>cmax</code></td><td>Inicial máxima y cuota mensual máxima en US$.</td></tr>
 <tr><td><code>conf=1</code></td><td>Solo confianza Alta/Media.</td></tr>
@@ -200,7 +208,11 @@ https://prueba-arranca.&lt;subdominio&gt;.workers.dev</code></pre>
 <tr><td><code>public/js/charts.js</code></td><td>Gráfico de líneas y de barras (d3, incluido en el repositorio; sin servicios externos).</td></tr>
 <tr><td><code>scripts/validate.mjs</code></td><td>Revisa los datos antes de publicar.</td></tr>
 <tr><td><code>scripts/build.mjs</code></td><td>Une los cortes, calcula campos derivados y arma <code>dist/</code>.</td></tr>
-<tr><td><code>test/calc.test.mjs</code></td><td>8 pruebas automáticas de los cálculos.</td></tr>
+<tr><td><code>public/js/manual.js</code>, <code>manual-core.js</code></td><td>Pestaña Cargar dato: formularios, vista previa, envío y registro de datos manuales.</td></tr>
+<tr><td><code>public/js/importar.js</code>, <code>xlsx-lite.js</code></td><td>Carga por Excel/CSV: plantilla, lector y escritor de <code>.xlsx</code> (sin dependencias) y revisión fila por fila.</td></tr>
+<tr><td><code>src/worker.js</code>, <code>src/intake.js</code></td><td>Worker de Cloudflare: atiende <code>/api/cargar</code> y crea el PR.</td></tr>
+<tr><td><code>scripts/cargar.mjs</code></td><td>Lógica compartida por el build y la validación para leer los datos manuales y calcular tasas.</td></tr>
+<tr><td><code>test/*.test.mjs</code></td><td>54 pruebas automáticas (cálculos, monedas, datos manuales, importación, Excel y Worker).</td></tr>
 <tr><td><code>wrangler.toml</code></td><td>Configuración del Worker <code>prueba-arranca</code> y de la carpeta publicada (<code>dist</code>).</td></tr>
 </table></div>
 
