@@ -103,3 +103,5 @@ button.b:disabled{opacity:.45;cursor:not-allowed}
 .pt.c11{background:#7d3c98}
 .tabs{scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}.tabs a{scroll-snap-align:start}
 @media(max-width:640px){.tabs a{padding:.7rem .75rem}.tip{white-space:normal;max-width:70vw}.tw table{font-size:.82rem}}
+.combo{display:flex;flex-direction:column;gap:.4rem;min-width:0}
+.combo input[hidden]{display:none}

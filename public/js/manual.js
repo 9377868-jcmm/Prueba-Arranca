@@ -23,7 +23,23 @@ export function vCargar(el, D, opciones = {}) {
   const campo = (id, etiqueta, ctrl, ayuda) => { campos[id] = ctrl; ctrl.id = 'f-' + id; return h('div', {class: 'campo'}, h('label', {for: 'f-' + id}, etiqueta), ctrl, ayuda && h('small', {}, ayuda)); };
   const inp = (type = 'text', extra = {}) => h('input', {type, autocomplete: 'off', ...extra});
   const sel = (opts, valor) => h('select', {}, opts.map(([v, t]) => h('option', {value: v, selected: v === valor}, t)));
-  const dl = (id, vals) => h('datalist', {id}, vals.map((v) => h('option', {value: v})));
+  // Lista desplegable con una última opción "nueva…" que muestra un campo de texto; se lee y escribe como un input (value).
+  const combo = (etiqueta, nuevo, placeholder) => {
+    const s = h('select', {'aria-label': etiqueta}), t = inp('text', {placeholder, hidden: true, 'aria-label': etiqueta + ' (nueva)'});
+    const caja = h('div', {class: 'combo'}, s, t);
+    const ver = () => { t.hidden = s.value !== '__nuevo'; };
+    s.addEventListener('change', () => { ver(); if (!t.hidden) t.focus(); });
+    Object.defineProperty(caja, 'value', {
+      get: () => (s.value === '__nuevo' ? t.value : s.value),
+      set: (v) => { if ([...s.options].some((o) => o.value === v && v !== '__nuevo')) s.value = v; else if (v) { s.value = '__nuevo'; t.value = v; } else s.value = ''; ver(); }});
+    caja.opciones = (pares, vacio) => {
+      const previo = s.value;
+      s.replaceChildren(h('option', {value: ''}, vacio), ...pares.map(([v, tx]) => h('option', {value: v}, tx)), h('option', {value: '__nuevo'}, nuevo));
+      s.value = [...s.options].some((o) => o.value === previo) ? previo : '';
+      ver();
+    };
+    return caja;
+  };
 
   // ---- controles comunes
   const cMotivo = sel(Object.entries(MOTIVOS), 'sin_publicar');
@@ -35,12 +51,15 @@ export function vCargar(el, D, opciones = {}) {
   const cNota = h('textarea', {rows: 2});
 
   // ---- modo precio
-  const cEmpresa = inp('text', {list: 'dl-emp', placeholder: 'Empresa existente'});
-  const cModelo = inp('text', {list: 'dl-mod', placeholder: 'Modelo (existente o nuevo)'});
+  const cEmpresa = sel([['', '— elija una empresa —'], ...empresas.map((e) => [e, e])], '');
+  const cMarca = combo('Marca', 'Otra marca (nueva)…', 'Escriba la marca nueva');
+  const cModelo = combo('Modelo', 'Modelo nuevo…', 'Escriba el modelo nuevo');
+  cMarca.opciones(marcasLista.map((m) => [m, m]), '— elija una marca —');
+  const modeloMarca = new Map();
+  [...D.rows, ...D.vigAll].forEach((r) => { if (r.modelo_clave && !modeloMarca.has(r.modelo_clave)) modeloMarca.set(r.modelo_clave, r.marca_norm || r.marca || ''); });
   const cPlan = h('select', {});
   const cCuotas = inp('number', {min: 1, step: 1, placeholder: 'N.° de cuotas'});
   const cFrec = sel(FRECUENCIAS.map((f) => [f, f]), 'Quincenal');
-  const cMarca = inp('text', {list: 'dl-marca', placeholder: 'Marca'});
   const cInicial = inp('number', {min: 0, step: 'any'});
   const cCuota = inp('number', {min: 0, step: 'any'});
   const MON = [['USD', 'US$ (dólares)'], ['EUR', '€ (euros)']];
@@ -77,7 +96,16 @@ export function vCargar(el, D, opciones = {}) {
     const base = ps.find((p) => p.plan === cPlan.value);
     if (base && !cMarca.dataset.tocado) cMarca.value = base.marca_norm || base.marca || '';
     if (!base && !cMarca.dataset.tocado) { const m = reales.find((r) => r.modelo_clave === claveModelo(cModelo.value)); if (m) cMarca.value = m.marca_norm || ''; }
-    document.getElementById('dl-mod').replaceChildren(...[...new Set((cEmpresa.value.trim() ? reales.filter((r) => r.empresa === cEmpresa.value.trim()) : reales).map((r) => r.modelo_clave))].sort().map((v) => h('option', {value: v})));
+    refrescarModelos();
+  }
+  // Modelos de la marca elegida (todos si aún no hay marca); un modelo ya elegido que no pertenece a la marca se conserva solo si es nuevo.
+  function refrescarModelos() {
+    const marca = cMarca.value.trim();
+    const claves = [...modeloMarca].filter(([, m]) => !marca || m === marca).map(([k]) => k).sort((a, b) => a.localeCompare(b, 'es'));
+    const actual = cModelo.value;
+    const nuevoEscrito = actual && !modeloMarca.has(claveModelo(actual)) && !claves.includes(actual);
+    cModelo.opciones(claves.map((k) => [k, k]), marca ? '— elija un modelo de ' + marca + ' —' : '— elija un modelo —');
+    if (!nuevoEscrito && actual && !claves.includes(actual)) cModelo.value = '';
   }
 
   const comunes = () => ({v: 1, registrado_por: cQuien.value.trim() || (remoto ? 'por código' : ''), registrado: hoy, motivo: cMotivo.value, fuente: cFuente.value.trim(), url: cUrl.value.trim(), fecha_dato: cFecha.value});
@@ -233,10 +261,10 @@ export function vCargar(el, D, opciones = {}) {
       campo('url', 'Enlace de respaldo', cUrl), campo('quien', 'Registrado por', cQuien), campo('nota', 'Nota (opcional)', cNota)];
     if (modo === 'precio') {
       cuerpo.replaceChildren(
-        h('div', {class: 'fila'}, campo('empresa', 'Empresa', cEmpresa), campo('modelo', 'Modelo', cModelo)),
+        h('div', {class: 'fila'}, campo('empresa', 'Empresa', cEmpresa), campo('marca', 'Marca', cMarca)),
+        campo('modelo', 'Modelo', cModelo, 'Aparecen los modelos de la marca elegida. Si no está, use "Modelo nuevo…"; si la marca es nueva, use "Otra marca (nueva)…".'),
         campo('plan', 'Plan', cPlan, 'Elija uno existente para actualizar su precio, o "Plan nuevo" para crearlo (también sirve para un modelo nuevo).'),
         h('div', {class: 'fila'}, campo('cuotas', 'N.° de cuotas (solo plan nuevo)', cCuotas), campo('frec', 'Frecuencia (solo plan nuevo)', cFrec)),
-        campo('marca', 'Marca', cMarca),
         h('div', {class: 'fila'}, campo('moni', 'Moneda de la inicial', cMonI), campo('monc', 'Moneda de la cuota', cMonC)),
         h('div', {class: 'fila'}, campo('inicial', 'Inicial', cInicial), campo('cuota', 'Cuota', cCuota)),
         campo('conf', 'Confianza', cConf), ...comun);
@@ -266,6 +294,7 @@ export function vCargar(el, D, opciones = {}) {
   }
 
   [cEmpresa, cModelo].forEach((c) => c.addEventListener('input', () => { cPlan.dataset.tocado = ''; refrescarPlanes(); actualizar(); }));
+  ['change', 'input'].forEach((ev) => cMarca.addEventListener(ev, () => { refrescarModelos(); cPlan.dataset.tocado = ''; refrescarPlanes(); actualizar(); }));
   cPlan.addEventListener('change', () => { cPlan.dataset.tocado = '1'; cMarca.dataset.tocado = ''; refrescarPlanes(); actualizar(); });
   cMarca.addEventListener('input', () => { cMarca.dataset.tocado = '1'; });
   cArchivo.addEventListener('change', async () => {
@@ -290,10 +319,10 @@ export function vCargar(el, D, opciones = {}) {
     modo = 'precio';
     barra.querySelectorAll('button').forEach((b, i) => { b.classList.toggle('on', i === 0); b.setAttribute('aria-pressed', String(i === 0)); });
     dibujar();
-    cEmpresa.value = f.empresa; cModelo.value = f.modelo_clave; cPlan.dataset.tocado = '';
+    cEmpresa.value = f.empresa; cMarca.value = f.marca_norm || f.marca || ''; cMarca.dataset.tocado = '1'; refrescarModelos(); cModelo.value = f.modelo_clave; cPlan.dataset.tocado = '';
     refrescarPlanes();
     if ([...cPlan.options].some((o) => o.value === f.plan)) cPlan.value = f.plan;
-    cInicial.value = f.inicial ?? ''; cCuota.value = f.cuota ?? ''; cMarca.value = f.marca_norm || f.marca || ''; cMarca.dataset.tocado = '1';
+    cInicial.value = f.inicial ?? ''; cCuota.value = f.cuota ?? ''; 
     cMonI.value = f.moneda_inicial === 'EUR' ? 'EUR' : 'USD'; cMonC.value = f.moneda_cuota === 'EUR' ? 'EUR' : 'USD'; cFecha.value = hoy; cMotivo.value = 'otro'; cConf.value = f.confianza === 'Alta' ? 'Media' : f.confianza;
     cFuente.value = ''; cFuente.placeholder = 'Confirme el dato y diga de dónde lo verificó hoy'; cNota.value = 'Renovación del dato del ' + f.fecha_dato;
     actualizar(); cuerpo.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -314,7 +343,8 @@ export function vCargar(el, D, opciones = {}) {
 
   el.append(h('div', {class: 'card'}, h('h2', {}, 'Cargar un dato a mano'),
     h('p', {class: 'note'}, 'Use esto cuando una empresa no publicó a tiempo o su información no se puede consultar en línea. El dato queda marcado como "Manual", vence a los 30 días o cuando el próximo corte traiga el dato real, y pasa por revisión (PR) antes de publicarse.'),
-    dl('dl-emp', empresas), h('datalist', {id: 'dl-mod'}), dl('dl-marca', marcasLista), barra, cuerpo, salida), historial);
+    barra, cuerpo, salida), historial);
+  refrescarModelos();
   refrescarPlanes();
   dibujar();
   fetch('api/estado').then((r) => r.json()).then((j) => { if (j.habilitado) { remoto = true; actualizar(); } }).catch(() => {});
