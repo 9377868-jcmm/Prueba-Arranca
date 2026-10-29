@@ -1,0 +1,31 @@
+{
+  "v": 1,
+  "registrado_por": "Ricardo",
+  "registrado": "2026-10-29",
+  "motivo": "sin_publicar",
+  "fuente": "Salvador C",
+  "url": "",
+  "fecha_dato": "2026-10-29",
+  "tipo": "precio",
+  "confianza": "Media",
+  "vence": "2026-11-28",
+  "nota": "",
+  "nuevo": "plan",
+  "plan": {
+   "empresa": "Arranca",
+   "marca": "Empire Keeway",
+   "modelo": "New Horse",
+   "modelo_clave": "NEW HORSE",
+   "plan": "24 cuotas · Semanal",
+   "inicial": 400,
+   "inicial_txt": "",
+   "cuota": 80,
+   "cuota_txt": "",
+   "moneda_inicial": "USD",
+   "moneda_cuota": "EUR",
+   "moneda": "USD (inicial) / EUR (cuota)",
+   "frecuencia": "Semanal",
+   "n_cuotas": 24
+  }
+ }
+]
