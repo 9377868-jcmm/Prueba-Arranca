@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arranca · Espacio del operador de arrendamiento</title>
+<style>
+:root{
+  --bg:#f3f4f6; --card:#fff; --ink:#1f2937; --ink2:#4b5563; --mut:#8a93a0; --line:#e5e7eb; --line2:#eef0f3;
+  --navy:#27323f; --navy2:#344150; --orange:#f26b1d; --orange-bg:#fff1e8;
+  --green:#15803d; --green-bg:#e8f6ee; --red:#dc2626; --red-bg:#fdeaea; --amber:#b45309; --amber-bg:#fff4dc;
+  --blue:#1d4ed8; --blue-bg:#e8effd; --violet:#6d28d9; --violet-bg:#f0eafd;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.serif{font-family:Georgia,"Times New Roman",serif}
+
+/* ---------- barra superior ---------- */
+.top{background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.06);position:sticky;top:0;z-index:20}
+.top-in{display:flex;align-items:center;gap:22px;padding:10px 24px;max-width:1700px;margin:auto}
+.logo{font:800 24px/1 Georgia,serif;letter-spacing:-.5px;color:var(--navy)}
+.logo b{color:var(--orange)}
+.nav{display:flex;gap:26px;margin:0 auto;font-size:12.5px;color:var(--ink2)}
+.nav a{text-decoration:none;color:inherit;padding:4px 0;border-bottom:2px solid transparent}
+.nav a.on{color:var(--navy);font-weight:600;border-color:var(--orange)}
+.tr{display:flex;align-items:center;gap:14px;font-size:12px}
+.rate{color:var(--orange);font-weight:600}
+.bell{position:relative;width:26px;height:26px;display:grid;place-items:center}
+.bell i{position:absolute;top:-3px;right:-5px;background:var(--red);color:#fff;font:700 9px/1 system-ui;border-radius:8px;padding:2px 4px;font-style:normal}
+.av{width:28px;height:28px;border-radius:50%;background:#e5e7eb;display:grid;place-items:center;font-weight:600;font-size:11px}
+.crumb{border-top:1px solid var(--line2);text-align:center;font-size:11.5px;color:var(--mut);padding:5px}
+.crumb b{color:var(--ink2);font-weight:600}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1700px;margin:0 auto;padding:12px 24px 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.pad{padding:14px 16px}
+
+/* tareas */
+.tasks{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:20px;padding:10px 16px;font-size:12px;margin-bottom:12px}
+.th{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin-bottom:5px;font-weight:600}
+.th a{color:var(--ink);text-decoration:none;text-transform:none;letter-spacing:0;font-weight:600}
+.task{display:flex;align-items:center;gap:8px;padding:3px 0}
+.task .n{color:var(--orange);font-weight:700;width:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex:none}
+.task .due{margin-left:auto;font-size:11px;color:var(--mut)}
+.task .due.red{color:var(--red);font-weight:600}
+.task button{border:0;background:none;color:var(--orange);font-weight:700;padding:0 2px}
+.tmuted{color:var(--mut)}
+
+/* tres columnas */
+.grid{display:grid;grid-template-columns:318px minmax(0,1fr) 300px;gap:12px;align-items:start}
+.col-l{position:sticky;top:96px;max-height:calc(100vh - 110px);display:flex;flex-direction:column;overflow:hidden}
+.col-r{position:sticky;top:96px;max-height:calc(100vh - 110px);display:flex;flex-direction:column;overflow:hidden}
+
+/* columna izquierda */
+.new{margin:12px 12px 8px;background:var(--navy);color:#fff;border:0;border-radius:8px;padding:10px;font-weight:600;display:flex;gap:8px;align-items:center;justify-content:center}
+.new:hover{background:var(--navy2)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 12px 8px}
+.tab{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 2px;text-align:center;font-size:11px;line-height:1.2;color:var(--ink2)}
+.tab b{display:block;font-size:16px;color:var(--ink);font-family:Georgia,serif}
+.tab.on{border-color:var(--navy);background:var(--navy);color:#cfd6df}
+.tab.on b{color:#fff}
+.tab[data-t="rechazados"] b{color:var(--red)} .tab.on[data-t="rechazados"] b{color:#fff}
+.search{margin:0 12px 8px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;gap:8px;color:var(--mut)}
+.search input{border:0;outline:0;flex:1;font:inherit;background:none;min-width:0}
+.chips{display:flex;gap:5px;padding:0 12px 8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:12px;padding:2px 9px;font-size:11px;background:#fff;color:var(--ink2)}
+.chip.on{background:var(--orange-bg);border-color:#f7c3a2;color:#a3430b;font-weight:600}
+.list{overflow:auto;flex:1;border-top:1px solid var(--line2)}
+.grp{display:flex;justify-content:space-between;padding:9px 14px 4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--ink2);text-transform:uppercase}
+.grp span:last-child{color:var(--blue)}
+.it{padding:9px 14px;border-bottom:1px solid var(--line2);cursor:pointer;border-left:3px solid transparent}
+.it:hover{background:#fafafa}
+.it.on{background:#fdeee3;border-left-color:var(--orange)}
+.it .r1{display:flex;align-items:center;gap:6px}
+.it .nm{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.it .hr{margin-left:auto;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+.it .r2{color:var(--ink2);font-size:11px;margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.empty{padding:26px 16px;text-align:center;color:var(--mut)}
+
+/* pills */
+.pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.p-green{background:var(--green-bg);color:var(--green)} .p-red{background:var(--red-bg);color:var(--red)}
+.p-amber{background:var(--amber-bg);color:var(--amber)} .p-blue{background:var(--blue-bg);color:var(--blue)}
+.p-gray{background:#eef0f3;color:var(--ink2)} .p-violet{background:var(--violet-bg);color:var(--violet)}
+.p-orange{background:var(--orange-bg);color:#a3430b}
+.pill.o{background:#fff;border:1px solid currentColor}
+
+/* centro */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.kpi{background:#f4f5f7;border:1px solid var(--line);border-radius:8px;padding:9px 11px;cursor:pointer;text-align:left}
+.kpi:hover{border-color:#cbd0d8}
+.kpi small{display:block;color:var(--ink2);font-size:11px}
+.kpi b{font:700 20px/1.2 Georgia,serif}
+.kpi.warn b{color:var(--red)} .kpi.ok b{color:var(--green)}
+
+.head{display:flex;gap:16px;align-items:flex-start}
+.head h1{margin:0;font:700 26px/1.1 Georgia,serif}
+.head .sub{color:var(--ink2);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.box{margin-left:auto;border-radius:8px;padding:8px 14px;text-align:right;background:var(--orange-bg);color:#a3430b}
+.box small{display:block;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.box b{font:700 22px/1.1 Georgia,serif;display:block}
+.box span{font-size:11px}
+.box.green{background:var(--green-bg);color:var(--green)} .box.red{background:var(--red-bg);color:var(--red)}
+.contact{margin-top:12px;background:#f4f5f7;border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.contact .tel{font:700 19px/1 Georgia,serif;letter-spacing:.3px;margin-right:4px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 11px;font-weight:600;font-size:12px;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:#b8bec9}
+.btn.dark{background:var(--navy);color:#fff;border-color:var(--navy)} .btn.dark:hover{background:var(--navy2)}
+.btn.wa{background:#e9f9ef;border-color:#bfe8cf;color:#14733b}
+.btn.sm{padding:3px 8px;font-size:11px}
+.links{margin-top:10px;display:flex;gap:14px;font-size:11.5px}
+.links a{color:var(--navy);text-decoration:none;border-bottom:1px solid #c9ced6;cursor:pointer}
+.links a:hover{color:var(--orange);border-color:var(--orange)}
+
+/* stepper */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;position:relative}
+.st{text-align:center;position:relative;padding:0 4px;cursor:default}
+.st::before{content:"";position:absolute;top:13px;left:-50%;right:50%;height:2px;background:var(--line);z-index:0}
+.st:first-child::before{display:none}
+.st.done::before,.st.cur::before{background:var(--green)}
+.st i{position:relative;z-index:1;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid var(--line);display:grid;place-items:center;margin:0 auto 5px;font-style:normal;font-weight:700;font-size:12px;color:var(--mut)}
+.st.done i{background:var(--green);border-color:var(--green);color:#fff}
+.st.cur i{border-color:var(--orange);color:var(--orange);box-shadow:0 0 0 4px var(--orange-bg)}
+.st.bad i{background:var(--red);border-color:var(--red);color:#fff}
+.st b{display:block;font-size:11.5px;color:var(--ink2)} .st.cur b{color:var(--ink)}
+.st small{color:var(--mut);font-size:10.5px}
+
+.sech{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sech h2{margin:0;font:700 16px/1 Georgia,serif}
+.sech .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.fields{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 16px}
+.f label{display:block;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.f div.v{font-weight:600}
+.f input,.f select{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;background:#fff}
+.f input:focus,.f select:focus{outline:2px solid var(--orange-bg);border-color:var(--orange)}
+.f.span2{grid-column:span 2}
+.banner{border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.banner.blue{background:var(--blue-bg);color:var(--blue)} .banner.amber{background:var(--amber-bg);color:var(--amber)}
+.banner.red{background:var(--red-bg);color:var(--red)} .banner.green{background:var(--green-bg);color:var(--green)}
+
+.prog{height:6px;border-radius:4px;background:var(--line);overflow:hidden;width:150px}
+.prog i{display:block;height:100%;background:var(--green)}
+.docs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.doc{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;gap:10px;align-items:center}
+.doc .ic{width:32px;height:32px;border-radius:7px;background:#f1f3f6;display:grid;place-items:center;flex:none;font-size:15px}
+.doc .t{font-weight:600;font-size:12.5px;line-height:1.2}
+.doc .s{font-size:11px;color:var(--mut)}
+.doc .a{margin-left:auto;display:flex;gap:5px;align-items:center}
+.doc.ok{background:#f7fcf9;border-color:#cdeadb} .doc.ok .ic{background:var(--green-bg)}
+.doc.obs{background:#fffaf0;border-color:#f3dba7} .doc.obs .ic{background:var(--amber-bg)}
+.doc.miss{border-style:dashed}
+.doc.req .t::after{content:" *";color:var(--red)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+.kv label{display:block;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.kv div{font-weight:600}
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{display:flex;gap:10px;padding:5px 0;font-size:12px}
+.timeline time{color:var(--mut);width:78px;flex:none;font-size:11px}
+
+/* derecha */
+.col-r h3{margin:0;padding:14px 14px 8px;font-size:13px}
+.compose{margin:0 12px 10px;border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;gap:8px;align-items:flex-end}
+.compose textarea{flex:1;border:0;outline:0;resize:none;font:inherit;min-height:44px}
+.obs{overflow:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.ob{background:#f4f5f7;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px}
+.ob .h{display:flex;justify-content:space-between;color:var(--ink2);font-size:11px;font-weight:700;margin-bottom:4px;gap:6px}
+.ob .h span:last-child{font-weight:400;color:var(--mut);white-space:nowrap}
+.ob .tg{margin-bottom:4px}
+
+/* centro de mando */
+.dock{background:#fff;border:2px solid var(--navy);border-radius:12px;margin:12px 0 0}
+.dock-h{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line2)}
+.dock-h .c{width:20px;height:20px;border-radius:50%;background:var(--orange);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px}
+.dock-h h2{margin:0;font-size:14px}
+.dock-h .hint{margin-left:auto;color:var(--mut);font-size:11.5px}
+.next{margin:10px 16px 0;border-radius:8px;background:var(--orange-bg);color:#8a3a0a;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:12.5px}
+.next .btn{margin-left:auto;background:var(--orange);color:#fff;border-color:var(--orange)}
+.dock-g{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;padding:12px 16px}
+.g h4{margin:0 0 7px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.g h4::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c,var(--orange))}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.act{border:1px solid var(--line);border-radius:8px;background:#fff;padding:7px 8px;text-align:left;display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.2;min-height:44px}
+.act:hover:not(:disabled){border-color:var(--navy);background:#fafbfc}
+.act kbd{font:600 10px/1 system-ui;border:1px solid var(--line);border-radius:4px;padding:2px 4px;color:var(--mut);background:#f4f5f7;flex:none;margin-top:1px}
+.act small{display:block;color:var(--mut);font-size:10.5px;margin-top:1px}
+.act:disabled{opacity:.38;cursor:not-allowed}
+.act.hl{border-color:var(--orange);background:var(--orange-bg)}
+.act.good{border-color:#b9e2cb} .act.bad{border-color:#f1c2c2}
+.act.wide{grid-column:span 2}
+.dock-f{display:flex;gap:8px;padding:0 16px 14px}
+.dock-f input{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit}
+.dock-f .btn{padding:8px 14px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:9px;opacity:0;transition:.25s;z-index:50;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.mut{color:var(--mut)}
+.hide{display:none!important}
+
+@media (max-width:1250px){
+  .grid{grid-template-columns:300px 1fr}
+  .col-r{grid-column:1 / -1;position:static;max-height:none}
+}
+@media (max-width:820px){
+  .grid{grid-template-columns:1fr}.col-l{position:static;max-height:520px}
+  .tasks,.fields,.docs,.two,.dock-g{grid-template-columns:1fr}
+  .nav{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.head{flex-wrap:wrap}.box{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="logo"><b>A</b>rranca</div>
+    <nav class="nav">
+      <a>Productos</a><a class="on">Espacio de arrendamiento</a><a>Solicitudes</a><a>Usuarios</a><a>Entregas</a><a>Inventario de motos</a>
+    </nav>
+    <div class="tr">
+      <span class="rate">$ 1,00</span><span class="rate" style="color:#b45309">€ 1,00</span>
+      <span class="bell">🔔<i>7</i></span>
+      <span class="av">MR</span>
+    </div>
+  </div>
+  <div class="crumb">Inicio › <b>Espacio de arrendamiento</b> › <b id="crumbName">—</b></div>
+</header>
+
+<div class="wrap">
+
+  <!-- TAREAS -->
+  <section class="card tasks">
+    <div>
+      <div class="th"><span>☰ Tareas · Mis tareas <span id="tCount">3</span></span></div>
+      <div class="task"><span class="n">1</span><span class="dot"></span><span>Expediente de <b>Luis Herrera</b> completo: pasar a evaluación</span><span class="due red">Vence hoy</span><button title="Abrir">↗</button></div>
+      <div class="task"><span class="n">2</span><span class="dot"></span><span>Confirmar asistencia de la cita de las 3:00 p. m.</span><span class="due">Vence en 3 h</span><button title="Abrir">↗</button></div>
+      <div class="task"><span class="n">3</span><span class="dot"></span><span>Moto lista: avisar a <b>Andrea Rojas</b> para la entrega</span><span class="due">Mañana</span><button title="Abrir">↗</button></div>
+    </div>
+    <div>
+      <div class="th"><span>Sin asignar en mi departamento 2</span></div>
+      <div class="task"><span class="dot" style="background:#9ca3af"></span><span>Revisar rechazo por referencias · <b>Pedro Salas</b></span><button class="btn sm" style="margin-left:auto">Tomar</button></div>
+      <div class="task"><span class="dot" style="background:#9ca3af"></span><span>Cliente digital sin cita asignada · <b>Karla Mota</b></span><button class="btn sm" style="margin-left:auto">Tomar</button></div>
+    </div>
+    <div>
+      <div class="th"><span>Avisos del día</span><a href="#">Ver todas</a></div>
+      <div class="task"><span style="color:var(--amber)">●</span><span>2 expedientes con documentos observados</span></div>
+      <div class="task"><span style="color:var(--green)">●</span><span>Lote de 4 motos llegó al concesionario</span></div>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <!-- IZQUIERDA -->
+    <aside class="card col-l">
+      <button class="new" id="btnNuevo">＋ Nuevo cliente en sala</button>
+      <div class="tabs" id="tabs"></div>
+      <div class="search">🔍<input id="q" placeholder="Buscar nombre, cédula o placa"></div>
+      <div class="chips" id="chips"></div>
+      <div class="list" id="list"></div>
+    </aside>
+
+    <!-- CENTRO -->
+    <main>
+      <div class="kpis" id="kpis"></div>
+      <div id="center"></div>
+    </main>
+
+    <!-- DERECHA -->
+    <aside class="card col-r">
+      <h3>Observaciones</h3>
+      <div class="compose">
+        <textarea id="obsTxt" placeholder="Registra la gestión… @ para mencionar, # para una solicitud"></textarea>
+        <button class="btn dark" id="obsSend">Enviar</button>
+      </div>
+      <div class="obs" id="obsList"></div>
+    </aside>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ DATOS DE EJEMPLO ============ */
+const DOCS = [
+  {k:'ced',  t:'Cédula de identidad',       s:'Frente y reverso',        ic:'🪪', req:1},
+  {k:'selfie',t:'Foto con cédula en mano',  s:'Verificación de identidad',ic:'🤳', req:1},
+  {k:'rif',  t:'RIF vigente',               s:'PDF o foto legible',      ic:'📄', req:1},
+  {k:'lic',  t:'Licencia de conducir',      s:'Vigente, grado 2 o superior',ic:'🏍️', req:1},
+  {k:'dom',  t:'Comprobante de domicilio',  s:'Recibo de servicio o constancia',ic:'🏠', req:1},
+  {k:'ing',  t:'Comprobante de ingresos',   s:'Carta de trabajo o movimientos',ic:'💵', req:1},
+  {k:'ref',  t:'Referencias personales (2)',s:'Nombre, teléfono, parentesco',ic:'👥', req:1},
+  {k:'fia',  t:'Fiador + cédula del fiador',s:'Si el plan lo exige',     ic:'🤝', req:0},
+  {k:'med',  t:'Certificado médico',        s:'Opcional según plan',     ic:'🩺', req:0},
+  {k:'pago', t:'Comprobante de pago inicial',s:'Se carga al aprobar',    ic:'🧾', req:0},
+];
+const D = o=>Object.assign(Object.fromEntries(DOCS.map(d=>[d.k,'miss'])),o);
+
+const CLIENTS = [
+ {id:1,name:'Luis Herrera',ced:'V-18.442.907',tab:'citados',grp:'Hoy 10:00 a. m.',slot:'10:00 a. m.',origin:'digital',phase:2,state:'En sala',tel:'0414-555-0192',
+  moto:'EK Xpress 150',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$90',
+  f1:{nac:'14/03/1991',dir:'Av. Baralt, Catia, Caracas',trab:'Mensajero independiente',ing:'$420 / mes',civil:'Soltero',ref:'María Herrera (madre)',cita:'Hoy 10:00 a. m.',canal:'Instagram'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok',fia:'miss'}),
+  tag:'Completo',tagc:'p-green',
+  obs:[['Operador MR','11/11, 09:58 a. m.','Llegó puntual. Trae originales.','Cita'],['Bot Arranca','09/11, 06:12 p. m.','Completó la fase 1 desde Instagram. Cita agendada.','Digital'],['Operador MR','08/11, 02:30 p. m.','Llamada de confirmación: asistirá con su hermano.','Llamada']]},
+ {id:2,name:'Karla Mota',ced:'V-24.118.330',tab:'citados',grp:'Hoy 11:30 a. m.',slot:'11:30 a. m.',origin:'digital',phase:2,state:'Citada',tel:'0424-555-7781',
+  moto:'Bera SBR 200',plan:'Semanal · 52 cuotas',inicial:'$150',cuota:'$48',
+  f1:{nac:'02/09/1996',dir:'La Vega, Caracas',trab:'Peluquera',ing:'$350 / mes',civil:'Soltera',ref:'Yeimar Mota (hermana)',cita:'Hoy 11:30 a. m.',canal:'WhatsApp'},
+  docs:D({}),tag:'Sin documentos',tagc:'p-gray',
+  obs:[['Bot Arranca','10/11, 04:40 p. m.','Fase 1 completada. Pendiente de cita.','Digital']]},
+ {id:3,name:'Carlos Zambrano',ced:'V-20.907.114',tab:'citados',grp:'Hoy 3:00 p. m.',slot:'3:00 p. m.',origin:'digital',phase:2,state:'Citado',tel:'0412-555-3340',
+  moto:'EK Xpress 150',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$90',
+  f1:{nac:'21/06/1993',dir:'Petare, Sucre',trab:'Delivery (apps)',ing:'$510 / mes',civil:'Casado',ref:'Ana Zambrano (esposa)',cita:'Hoy 3:00 p. m.',canal:'Web'},
+  docs:D({}),tag:'Sin documentos',tagc:'p-gray',
+  obs:[['Operador MR','10/11, 11:05 a. m.','Reagendó de ayer a hoy por trabajo.','Cita']]},
+ {id:4,name:'Yoselin Duarte',ced:'V-27.554.018',tab:'citados',grp:'Mañana',slot:'Mañana 9:00 a. m.',origin:'digital',phase:1,state:'Citada',tel:'0416-555-2201',
+  moto:'Bera SBR 200',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$95',
+  f1:{nac:'11/01/1999',dir:'El Valle, Caracas',trab:'Cajera',ing:'$300 / mes',civil:'Soltera',ref:'—',cita:'Mañana 9:00 a. m.',canal:'TikTok'},
+  docs:D({}),tag:'No confirmó',tagc:'p-amber',
+  obs:[['Bot Arranca','11/11, 07:00 a. m.','Recordatorio enviado, sin respuesta.','Digital']]},
+ {id:5,name:'Pedro Linares',ced:'V-15.330.762',tab:'citados',grp:'Hoy · Sin cita (directo)',slot:'En sala',origin:'directo',phase:1,state:'En sala',tel:'',
+  moto:'—',plan:'—',inicial:'—',cuota:'—',
+  f1:{},docs:D({}),tag:'Fase 1 por llenar',tagc:'p-orange',
+  obs:[['Operador MR','11/11, 10:20 a. m.','Llegó directo al concesionario. Interesado en EK Xpress.','Directo']]},
+
+ {id:6,name:'Andrea Rojas',ced:'V-22.671.455',tab:'aprobados',grp:'Aprobada ayer',slot:'Aprobada 10/11',origin:'digital',phase:4,state:'Aprobada',tel:'0414-555-9012',
+  moto:'EK Xpress 150',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$90',
+  f1:{nac:'30/05/1994',dir:'Los Teques',trab:'Costurera',ing:'$380 / mes',civil:'Soltera',ref:'Rosa Rojas (madre)',cita:'05/11',canal:'Instagram'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok',fia:'ok',pago:'miss'}),tag:'Pendiente inicial',tagc:'p-amber',
+  obs:[['Comité','10/11, 04:10 p. m.','Aprobada con fiador. Monto sin cambios.','Decisión']]},
+ {id:7,name:'Daniel Pérez',ced:'V-19.040.221',tab:'aprobados',grp:'Aprobado ayer',slot:'Aprobado 10/11',origin:'directo',phase:4,state:'Aprobado',tel:'0426-555-1180',
+  moto:'Bera SBR 200',plan:'Semanal · 52 cuotas',inicial:'$150',cuota:'$48',
+  f1:{nac:'09/12/1990',dir:'Guarenas',trab:'Taxista moto',ing:'$480 / mes',civil:'Casado',ref:'Luisa P. (esposa)',cita:'—',canal:'Directo'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok',pago:'ok'}),tag:'Contrato por firmar',tagc:'p-blue',
+  obs:[['Comité','10/11, 12:30 p. m.','Aprobado.','Decisión']]},
+ {id:8,name:'Mariangel Colmenares',ced:'V-26.118.905',tab:'aprobados',grp:'Aprobada hace 3 días',slot:'Aprobada 08/11',origin:'digital',phase:4,state:'Aprobada',tel:'0412-555-6407',
+  moto:'EK Xpress 150',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$90',
+  f1:{nac:'17/08/1997',dir:'Caricuao',trab:'Vendedora',ing:'$340 / mes',civil:'Soltera',ref:'Carmen C. (tía)',cita:'04/11',canal:'WhatsApp'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok'}),tag:'Sin responder · 3 d',tagc:'p-red',
+  obs:[['Operador MR','10/11, 09:00 a. m.','No contestó la llamada.','Llamada']]},
+
+ {id:9,name:'José Gutiérrez',ced:'V-17.822.640',tab:'entrega',grp:'Entrega hoy',slot:'Hoy 2:00 p. m.',origin:'directo',phase:5,state:'Para entrega',tel:'0414-555-4455',
+  moto:'EK Xpress 150 · Rojo',plan:'Quincenal · 24 cuotas',inicial:'$200 pagado',cuota:'$90',
+  f1:{nac:'05/02/1988',dir:'Antímano',trab:'Mototaxista',ing:'$450 / mes',civil:'Casado',ref:'Juan G. (hermano)',cita:'—',canal:'Directo'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok',pago:'ok'}),tag:'Moto asignada',tagc:'p-green',
+  obs:[['Operador MR','11/11, 08:15 a. m.','Moto inspeccionada y con placa. Lista.','Entrega']]},
+ {id:10,name:'Rosa Medina',ced:'V-21.300.188',tab:'entrega',grp:'Entrega mañana',slot:'Mañana 10:00 a. m.',origin:'digital',phase:5,state:'Para entrega',tel:'0424-555-0066',
+  moto:'Bera SBR 200 · Negro',plan:'Semanal · 52 cuotas',inicial:'$150 pagado',cuota:'$48',
+  f1:{nac:'12/04/1995',dir:'Propatria',trab:'Estilista',ing:'$390 / mes',civil:'Soltera',ref:'Alba M. (madre)',cita:'03/11',canal:'Instagram'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok',pago:'ok'}),tag:'Falta placa',tagc:'p-amber',
+  obs:[['Logística','11/11, 09:40 a. m.','Placa en trámite, llega mañana temprano.','Entrega']]},
+ {id:11,name:'Wilmer Araujo',ced:'V-16.744.309',tab:'entrega',grp:'Entrega mañana',slot:'Mañana 11:30 a. m.',origin:'digital',phase:5,state:'Para entrega',tel:'0416-555-8890',
+  moto:'EK Xpress 150 · Azul',plan:'Quincenal · 24 cuotas',inicial:'$200 pagado',cuota:'$90',
+  f1:{nac:'23/10/1989',dir:'La Guaira',trab:'Pescadero',ing:'$400 / mes',civil:'Casado',ref:'Pilar A. (esposa)',cita:'02/11',canal:'Web'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'ok',ing:'ok',ref:'ok',pago:'ok'}),tag:'Moto asignada',tagc:'p-green',
+  obs:[]},
+
+ {id:12,name:'Pedro Salas',ced:'V-14.998.511',tab:'rechazados',grp:'Rechazado esta semana',slot:'Rechazado 09/11',origin:'digital',phase:3,state:'Rechazado',tel:'0412-555-7302',
+  moto:'Bera SBR 200',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$95',
+  f1:{nac:'01/07/1985',dir:'Petare',trab:'Obrero',ing:'$250 / mes',civil:'Casado',ref:'—',cita:'06/11',canal:'Instagram'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'obs',dom:'ok',ing:'ok',ref:'obs'}),tag:'Referencias no verificadas',tagc:'p-red',motivo:'Referencias no verificables y licencia vencida.',
+  obs:[['Comité','09/11, 05:00 p. m.','Rechazado: referencias no verificables y licencia vencida. Puede reaplicar con documentos nuevos.','Decisión']]},
+ {id:13,name:'Nelly Barrios',ced:'V-23.560.842',tab:'rechazados',grp:'Rechazado este mes',slot:'Rechazada 02/11',origin:'directo',phase:3,state:'Rechazada',tel:'0414-555-3921',
+  moto:'EK Xpress 150',plan:'Quincenal · 24 cuotas',inicial:'$200',cuota:'$90',
+  f1:{nac:'19/03/1996',dir:'San Martín',trab:'Sin empleo fijo',ing:'No comprobable',civil:'Soltera',ref:'—',cita:'—',canal:'Directo'},
+  docs:D({ced:'ok',selfie:'ok',rif:'ok',lic:'ok',dom:'miss',ing:'miss',ref:'ok'}),tag:'Ingresos no comprobables',tagc:'p-red',motivo:'No pudo comprobar ingresos.',
+  obs:[['Comité','02/11, 03:10 p. m.','Rechazada por ingresos no comprobables.','Decisión']]},
+];
+
+const TABS=[['citados','Citados'],['aprobados','Aprobados'],['entrega','Para entrega'],['rechazados','Rechazados']];
+const STEPS=[['Datos del solicitante','Fase 1'],['Expediente','Fase 2 · documentos'],['Evaluación','Comité'],['Decisión','Aprobado / rechazado'],['Entrega','Moto y contrato']];
+
+let tab='citados', sel=1, filt='todos', query='';
+const $=s=>document.querySelector(s);
+const cur=()=>CLIENTS.find(c=>c.id===sel);
+
+/* ============ UTILIDADES ============ */
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+function docStats(c){const req=DOCS.filter(d=>d.req);const ok=req.filter(d=>c.docs[d.k]==='ok').length;const all=DOCS.filter(d=>c.docs[d.k]==='ok').length;const obs=DOCS.filter(d=>c.docs[d.k]==='obs').length;return{req:req.length,ok,all,obs,complete:ok===req.length&&obs===0}}
+function addObs(c,txt,tag='Observación'){c.obs.unshift(['Operador MR','11/11, '+new Date().toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'}),txt,tag]);renderObs()}
+function originPill(c){return c.origin==='digital'?'<span class="pill p-violet">Digital</span>':'<span class="pill p-orange">Directo</span>'}
+
+/* ============ IZQUIERDA ============ */
+function renderTabs(){
+  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab ${k===tab?'on':''}" data-t="${k}"><b>${CLIENTS.filter(c=>c.tab===k).length}</b>${l}</button>`).join('');
+  $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.t;const f=CLIENTS.find(c=>c.tab===tab);if(f)sel=f.id;renderAll()});
+}
+function renderChips(){
+  const opts={citados:['todos','digital','directo','en sala'],aprobados:['todos','sin responder','contrato por firmar'],entrega:['todos','hoy','mañana'],rechazados:['todos','pueden reaplicar']}[tab];
+  if(!opts.includes(filt))filt='todos';
+  $('#chips').innerHTML=opts.map(o=>`<button class="chip ${o===filt?'on':''}" data-f="${o}">${o[0].toUpperCase()+o.slice(1)}</button>`).join('');
+  $('#chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{filt=b.dataset.f;renderList();renderChips()});
+}
+function matchFilter(c){
+  if(filt==='todos')return true;
+  if(filt==='digital'||filt==='directo')return c.origin===filt;
+  if(filt==='en sala')return c.state==='En sala';
+  if(filt==='sin responder')return c.tag.startsWith('Sin responder');
+  if(filt==='contrato por firmar')return c.tag.startsWith('Contrato');
+  if(filt==='hoy')return c.grp.includes('hoy');
+  if(filt==='mañana')return c.grp.includes('mañana');
+  if(filt==='pueden reaplicar')return true;
+  return true;
+}
+function renderList(){
+  const q=query.toLowerCase();
+  const items=CLIENTS.filter(c=>c.tab===tab&&matchFilter(c)&&(!q||c.name.toLowerCase().includes(q)||c.ced.includes(q)));
+  if(!items.length){$('#list').innerHTML='<div class="empty">Sin resultados.</div>';return}
+  const groups={};items.forEach(c=>(groups[c.grp]=groups[c.grp]||[]).push(c));
+  $('#list').innerHTML=Object.entries(groups).map(([g,arr])=>`<div class="grp"><span>${g}</span><span>${arr.length}</span></div>`+arr.map(c=>`
+    <div class="it ${c.id===sel?'on':''}" data-id="${c.id}">
+      <div class="r1"><span class="nm">${c.name}</span><span class="pill ${c.tagc}">${c.tag}</span><span class="hr">${(c.slot.match(/\d{1,2}:\d{2} [ap]\. m\./)||[c.slot.split(' ').pop()])[0]}</span></div>
+      <div class="r2">${originPill(c)}<span>${c.ced}</span><span>· ${c.moto}</span></div>
+    </div>`).join('')).join('');
+  $('#list').querySelectorAll('.it').forEach(e=>e.onclick=()=>{sel=+e.dataset.id;renderAll()});
+}
+
+/* ============ KPIs ============ */
+function renderKpis(){
+  const k=[
+    ['Citas de hoy','3','',()=>{tab='citados';renderAll()}],
+    ['En sala ahora','2','',()=>{tab='citados';filt='en sala';renderAll()}],
+    ['Aprobados sin retirar','3','',()=>{tab='aprobados';renderAll()}],
+    ['Entregas hoy / mañana','1 / 2','ok',()=>{tab='entrega';renderAll()}],
+  ];
+  $('#kpis').innerHTML=k.map(([l,v,c],i)=>`<button class="kpi ${c}" data-i="${i}"><small>${l}</small><b>${v}</b></button>`).join('');
+  $('#kpis').querySelectorAll('.kpi').forEach(b=>b.onclick=k[+b.dataset.i][3]);
+}
+
+/* ============ CENTRO ============ */
+function stepState(c,i){ // i 0..4
+  if(c.tab==='rechazados'){return i<2?'done':i===2?'done':i===3?'bad':''}
+  const p=c.phase; // fase actual (1..5)
+  if(c.tab==='citados'){return i<p-1?'done':i===p-1?'cur':''}
+  if(c.tab==='aprobados'){return i<3?'done':i===3?'done':i===4?'cur':''}
+  if(c.tab==='entrega'){return i<4?'done':'cur'}
+}
+function renderCenter(){
+  const c=cur(); if(!c){$('#center').innerHTML='';return}
+  $('#crumbName').textContent=c.name;
+  const st=docStats(c);
+  const boxCls=c.tab==='rechazados'?'red':c.tab==='entrega'||c.tab==='aprobados'?'green':'';
+  const boxLabel=c.tab==='rechazados'?'Rechazado':c.tab==='entrega'?'Para entrega':c.tab==='aprobados'?'Aprobado':'Inicial a cobrar';
+  const boxVal=c.tab==='rechazados'?'—':c.inicial;
+  const f=c.f1||{};
+  const isDirectF1=c.origin==='directo'&&c.phase===1&&c.tab==='citados';
+
+  let f1html;
+  if(isDirectF1){
+    f1html=`<div class="banner amber">⚠ Cliente directo: la <b>fase 1</b> la llena usted. Complete los datos y continúe con los documentos.</div>
+    <div class="fields">
+      <div class="f"><label>Nombres y apellidos</label><input value="${c.name}"></div>
+      <div class="f"><label>Cédula</label><input value="${c.ced}"></div>
+      <div class="f"><label>Fecha de nacimiento</label><input placeholder="dd/mm/aaaa"></div>
+      <div class="f"><label>Teléfono principal</label><input placeholder="04xx-xxx-xxxx"></div>
+      <div class="f span2"><label>Dirección de habitación</label><input placeholder="Urbanización, calle, ciudad"></div>
+      <div class="f"><label>Ocupación</label><input placeholder="Mototaxista, delivery…"></div>
+      <div class="f"><label>Ingreso mensual (USD)</label><input placeholder="0"></div>
+      <div class="f"><label>Moto de interés</label><select><option>EK Xpress 150</option><option>Bera SBR 200</option></select></div>
+      <div class="f"><label>Plan</label><select><option>Quincenal · 24 cuotas</option><option>Semanal · 52 cuotas</option></select></div>
+      <div class="f"><label>Referencia personal</label><input placeholder="Nombre y teléfono"></div>
+      <div class="f"><label>¿Cómo nos conoció?</label><select><option>Pasó por el concesionario</option><option>Recomendado</option><option>Redes</option></select></div>
+    </div>`;
+  } else {
+    f1html=`<div class="banner blue">${c.origin==='digital'?'✔ Fase 1 completada por el cliente desde '+(f.canal||'canal digital')+'. Verifique los datos contra la cédula original.':'✔ Fase 1 llenada por el operador al recibir al cliente.'}</div>
+    <div class="fields">
+      <div class="f"><label>Fecha de nacimiento</label><div class="v">${f.nac||'—'}</div></div>
+      <div class="f"><label>Estado civil</label><div class="v">${f.civil||'—'}</div></div>
+      <div class="f"><label>Ocupación</label><div class="v">${f.trab||'—'}</div></div>
+      <div class="f"><label>Ingreso mensual</label><div class="v">${f.ing||'—'}</div></div>
+      <div class="f span2"><label>Dirección</label><div class="v">${f.dir||'—'}</div></div>
+      <div class="f"><label>Referencia 1</label><div class="v">${f.ref||'—'}</div></div>
+      <div class="f"><label>Canal / cita</label><div class="v">${f.canal||'—'} · ${f.cita||'—'}</div></div>
+    </div>`;
+  }
+
+  const docHtml=DOCS.map(d=>{
+    const s=c.docs[d.k]; const cls=s==='ok'?'ok':s==='obs'?'obs':'miss';
+    const label=s==='ok'?'<span class="pill p-green">Validado</span>':s==='obs'?'<span class="pill p-amber">Observado</span>':'<span class="pill p-gray">Falta</span>';
+    const locked=c.tab==='rechazados';
+    const btn=s==='ok'?`<button class="btn sm" data-doc="${d.k}" data-a="ver">Ver</button>`:
+              s==='obs'?`<button class="btn sm" data-doc="${d.k}" data-a="cargar">Reemplazar</button>`:
+              `<button class="btn sm dark" data-doc="${d.k}" data-a="cargar" ${locked?'disabled':''}>📎 Cargar</button>`;
+    return `<div class="doc ${cls} ${d.req?'req':''}"><div class="ic">${d.ic}</div><div><div class="t">${d.t}</div><div class="s">${s==='obs'?'Revisar: imagen borrosa o vencida':d.s}</div></div><div class="a">${label}${btn}</div></div>`;
+  }).join('');
+
+  $('#center').innerHTML=`
+  <section class="card pad">
+    <div class="head">
+      <div>
+        <h1>${c.name}</h1>
+        <div class="sub"><span>Cédula: <b>${c.ced}</b> 📋</span>${originPill(c)}<span class="pill ${c.tagc}">${c.tag}</span><span class="mut">${c.state} · ${c.slot}</span></div>
+      </div>
+      <div class="box ${boxCls}"><small>${boxLabel}</small><b>${boxVal}</b><span>Cuota ${c.cuota} · ${c.plan}</span></div>
+    </div>
+    <div class="contact">
+      <span class="tel">${c.tel||'Sin teléfono'}</span>
+      <button class="btn dark" data-q="llamar">📞 Llamar</button>
+      <button class="btn wa" data-q="wa">💬 WhatsApp</button>
+      <span class="mut" style="margin-left:auto">Moto: <b style="color:var(--ink)">${c.moto}</b></span>
+      <button class="btn" data-q="reagendar">📅 Reagendar</button>
+    </div>
+    <div class="links"><a data-q="perfil">Ver cliente</a><a data-q="eventos">Ver eventos</a><a data-q="contrato">Ver contrato</a><a data-q="historial">Historial del cliente</a></div>
+  </section>
+
+  <section class="card pad" style="margin-top:12px">
+    <div class="steps">${STEPS.map((s,i)=>`<div class="st ${stepState(c,i)}"><i>${stepState(c,i)==='done'?'✓':stepState(c,i)==='bad'?'✕':i+1}</i><b>${s[0]}</b><small>${s[1]}</small></div>`).join('')}</div>
+    ${c.tab==='rechazados'?`<div class="banner red" style="margin:14px 0 0"><b>Motivo:</b> ${c.motivo}</div>`:''}
+  </section>
+
+  <section class="card pad" style="margin-top:12px">
+    <div class="sech"><h2>Fase 1 · Datos del solicitante</h2><div class="r">${isDirectF1?'<button class="btn dark" data-q="guardarf1">Guardar fase 1</button>':'<button class="btn sm" data-q="editarf1">Editar</button>'}</div></div>
+    ${f1html}
+  </section>
+
+  <section class="card pad" style="margin-top:12px">
+    <div class="sech"><h2>Fase 2 · Expediente</h2>
+      <div class="r"><span class="mut">${st.ok}/${st.req} obligatorios</span><div class="prog"><i style="width:${Math.round(st.ok/st.req*100)}%"></i></div>
+      <button class="btn sm" data-q="escanear">📷 Escanear</button><button class="btn sm" data-q="subirlote">⬆ Subir varios</button></div></div>
+    ${st.complete?'<div class="banner green">✔ Expediente completo y validado. Puede enviarlo a evaluación.</div>':st.obs?'<div class="banner amber">⚠ Hay documentos observados que debe reemplazar.</div>':''}
+    <div class="docs">${docHtml}</div>
+  </section>
+
+  <div class="two">
+    <section class="card pad">
+      <div class="sech"><h2>Plan y moto</h2></div>
+      <div class="kv">
+        <div><label>Moto</label><div>${c.moto}</div></div><div><label>Plan</label><div>${c.plan}</div></div><div><label>Cuota</label><div>${c.cuota}</div></div>
+        <div><label>Inicial</label><div>${c.inicial}</div></div><div><label>Origen</label><div>${c.origin==='digital'?'Digital':'Directo'}</div></div><div><label>Asesor</label><div>MR</div></div>
+      </div>
+      <div class="links" style="margin-top:12px"><a data-q="cotizar">Re-cotizar</a><a data-q="inventario">Ver inventario</a></div>
+    </section>
+    <section class="card pad">
+      <div class="sech"><h2>Línea de tiempo</h2></div>
+      <ul class="timeline">
+        ${c.obs.slice(0,4).map(o=>`<li><time>${o[1].split(',')[0]}</time><span>${o[2]}</span></li>`).join('')||'<li class="mut">Sin eventos todavía.</li>'}
+      </ul>
+    </section>
+  </div>
+
+  <section class="dock" id="dock"></section>`;
+
+  // eventos del centro
+  $('#center').querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.doc, d=DOCS.find(x=>x.k===k);
+    if(b.dataset.a==='ver'){toast('Abriendo '+d.t+'…');return}
+    c.docs[k]='ok'; addObs(c,'Documento cargado: '+d.t+'.','Expediente'); renderAll(); toast('✔ '+d.t+' cargado');
+  });
+  $('#center').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{
+    const q=b.dataset.q;
+    if(q==='guardarf1'){c.phase=2;c.tag='Fase 1 lista';c.tagc='p-blue';c.f1={nac:'—',dir:'—',trab:'—',ing:'—',civil:'—',ref:'—',cita:'Hoy',canal:'Directo'};addObs(c,'Fase 1 llenada por el operador. Pasa a cargar documentos.','Expediente');renderAll();toast('✔ Fase 1 guardada');return}
+    const m={llamar:'Marcando '+(c.tel||'…'),wa:'Abriendo WhatsApp',reagendar:'Abrir agenda de citas',perfil:'Abriendo ficha del cliente',eventos:'Abriendo eventos',contrato:'Abriendo contrato',historial:'Abriendo historial',editarf1:'Edición de fase 1',escanear:'Abrir escáner / cámara',subirlote:'Seleccione archivos',cotizar:'Abrir calculadora',inventario:'Abrir inventario'};
+    toast(m[q]||q);
+  });
+}
+
+/* ============ DERECHA ============ */
+function renderObs(){
+  const c=cur();
+  $('#obsList').innerHTML=c&&c.obs.length?c.obs.map(o=>`<div class="ob"><div class="h"><span>${o[0]}</span><span>${o[1]}</span></div><span class="pill p-orange tg">${o[3]}</span><div>${o[2]}</div></div>`).join(''):'<div class="empty">Sin observaciones. Registre la primera gestión.</div>';
+}
+$('#obsSend').onclick=()=>{const t=$('#obsTxt').value.trim();if(!t)return;addObs(cur(),t);$('#obsTxt').value='';toast('Observación guardada')};
+
+/* ============ CENTRO DE MANDO ============ */
+function actionsFor(c){
+  const st=docStats(c);
+  const A=(id,key,label,sub,{dis=false,hl=false,cls=''}={})=>({id,key,label,sub,dis,hl,cls});
+  const citados=c.tab==='citados', apro=c.tab==='aprobados', ent=c.tab==='entrega', rech=c.tab==='rechazados';
+  const nextMap=()=>{
+    if(rech)return['Reaplicar con documentos nuevos o cerrar el caso','reaplicar'];
+    if(ent)return[c.tag==='Falta placa'?'Esperar placa y avisar al cliente':'Confirmar hora y registrar la entrega','confirmar_ent'];
+    if(apro)return[c.tag.startsWith('Sin responder')?'Insistir: llamar al cliente aprobado':'Registrar el pago inicial y firmar contrato','llamar'];
+    if(c.origin==='directo'&&c.phase===1)return['Llenar la fase 1 con el cliente en sala','fase1'];
+    if(c.state==='Citada'||c.state==='Citado'||c.state==='En sala'&&st.all===0)return[c.state==='En sala'?'Registrar llegada y empezar la carga de documentos':'Confirmar asistencia a la cita','checkin'];
+    if(!st.complete)return['Cargar documentos faltantes ('+(st.req-st.ok)+' obligatorios)','cargar'];
+    return['Expediente completo: enviar a evaluación','evaluar'];
+  };
+  const [nx,nxId]=nextMap();
+  const groups=[
+   {t:'Atención en sala',c:'#f26b1d',a:[
+     A('checkin','1','Registrar llegada','Marca "En sala"',{dis:!citados||c.state==='En sala',hl:nxId==='checkin'}),
+     A('noasist','2','No asistió','Pasa a reagendar',{dis:!citados}),
+     A('fase1','3','Llenar fase 1','Cliente directo',{dis:!(c.origin==='directo'&&c.phase===1),hl:nxId==='fase1'}),
+     A('reagendar','4','Reagendar cita','Nueva fecha y hora',{dis:!citados}),
+     A('nueva','5','Nueva solicitud','Otro plan o moto',{}),
+     A('cotizar','6','Cotizar plan','Calculadora de cuotas',{}),
+   ]},
+   {t:'Expediente (fase 2)',c:'#1d4ed8',a:[
+     A('cargar','7','Cargar documentos','Escáner o archivos',{dis:rech||ent,hl:nxId==='cargar'}),
+     A('pedir','8','Solicitar faltantes','Envía lista por WhatsApp',{dis:st.complete||rech||ent}),
+     A('validar','9','Validar expediente','Revisión de calidad',{dis:rech||ent||st.all===0}),
+     A('evaluar','0','Enviar a evaluación','Comité de crédito',{dis:!st.complete||!citados,hl:nxId==='evaluar',cls:'good'}),
+   ]},
+   {t:'Decisión y entrega',c:'#15803d',a:[
+     A('pagoini','P','Registrar pago inicial','Comprobante + monto',{dis:!apro}),
+     A('contrato','C','Generar contrato','Para firma del cliente',{dis:!(apro||ent)}),
+     A('prog_ent','E','Programar entrega','Moto, placa y hora',{dis:!apro}),
+     A('confirmar_ent','Y','Registrar entrega','Cierra el caso: pasa a Cobranza',{dis:!ent||c.tag==='Falta placa',hl:nxId==='confirmar_ent',cls:'good'}),
+     A('reaplicar','R','Reaplicar','Reabre con docs nuevos',{dis:!rech,hl:nxId==='reaplicar'}),
+     A('motivo','M','Marcar rechazo','Motivo obligatorio',{dis:rech||ent,cls:'bad'}),
+   ]},
+   {t:'CRM · Contacto',c:'#6d28d9',a:[
+     A('llamar','L','Llamada realizada','Registra resultado',{hl:nxId==='llamar'}),
+     A('wa','W','WhatsApp enviado','Plantillas rápidas',{}),
+     A('recordar','T','Recordatorio de cita','Plantilla + hora',{dis:!citados}),
+     A('seguim','S','Programar seguimiento','Tarea con fecha',{}),
+     A('perdido','X','Cliente no responde','Escala tras 3 intentos',{}),
+     A('refer','F','Pedir referido','Post-entrega',{dis:!ent}),
+   ]},
+  ];
+  return {groups,nx,nxId};
+}
+function renderDock(){
+  const c=cur(); if(!c)return;
+  const {groups,nx,nxId}=actionsFor(c);
+  $('#dock').innerHTML=`
+   <div class="dock-h"><span class="c">C</span><h2>Centro de mando · ${c.name}</h2><span class="hint">Atajos de teclado disponibles. Solo el operador asignado registra gestiones.</span></div>
+   <div class="next"><span>➜ <b>Siguiente mejor acción:</b> ${nx}</span><button class="btn" data-run="${nxId}">Hacerlo ahora</button></div>
+   <div class="dock-g">${groups.map(g=>`<div class="g" style="--c:${g.c}"><h4>${g.t}</h4><div class="acts">${g.a.map(a=>`<button class="act ${a.hl?'hl':''} ${a.cls}" data-run="${a.id}" ${a.dis?'disabled':''}><kbd>${a.key}</kbd><span>${a.label}<small>${a.sub}</small></span></button>`).join('')}</div></div>`).join('')}</div>
+   <div class="dock-f"><input id="nota" placeholder="Nota (opcional): llega con su hermano, trae originales…"><button class="btn" data-run="guardar">Guardar nota</button><button class="btn dark" data-run="siguiente">Guardar y siguiente ⏎</button></div>`;
+  $('#dock').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>run(b.dataset.run));
+}
+function run(id){
+  const c=cur(), nota=($('#nota')||{}).value||'';
+  const log=(t,tag)=>{addObs(c,t+(nota?' · '+nota:''),tag);if($('#nota'))$('#nota').value=''};
+  switch(id){
+    case 'checkin': c.state='En sala';c.tag='En sala';c.tagc='p-green';log('Llegada registrada. Cliente en sala.','Cita');toast('✔ Llegada registrada');break;
+    case 'noasist': c.state='No asistió';c.tag='No asistió';c.tagc='p-red';log('No asistió a la cita.','Cita');toast('Marcado como no asistió');break;
+    case 'fase1': c.phase===1&&document.querySelector('#center .fields input')?.focus();toast('Complete los datos de la fase 1');break;
+    case 'reagendar': c.slot='Reagendada';log('Cita reagendada.','Cita');toast('📅 Abrir agenda para reagendar');break;
+    case 'nueva': toast('Nueva solicitud para '+c.name);break;
+    case 'cotizar': toast('Abrir calculadora de cuotas');break;
+    case 'cargar': { const d=DOCS.find(d=>d.req&&c.docs[d.k]!=='ok'); if(d){c.docs[d.k]='ok';log('Documento cargado: '+d.t+'.','Expediente');toast('✔ '+d.t+' cargado')} else toast('No hay documentos obligatorios pendientes'); break;}
+    case 'pedir': { const f=DOCS.filter(d=>d.req&&c.docs[d.k]!=='ok').map(d=>d.t); log('Solicitud de faltantes enviada por WhatsApp: '+f.join(', ')+'.','Expediente');toast('Lista de faltantes enviada');break;}
+    case 'validar': log('Expediente revisado por el operador.','Expediente');toast('Revisión registrada');break;
+    case 'evaluar': c.tab='aprobados';c.phase=4;c.state='En evaluación';c.tag='En evaluación';c.tagc='p-blue';c.grp='En evaluación';c.slot='Evaluación';log('Expediente enviado a evaluación.','Decisión');tab='aprobados';toast('✔ Enviado a evaluación');break;
+    case 'pagoini': c.docs.pago='ok';c.tag='Contrato por firmar';c.tagc='p-blue';log('Pago inicial registrado.','Pago');toast('✔ Pago inicial registrado');break;
+    case 'contrato': log('Contrato generado para firma.','Contrato');toast('Contrato generado');break;
+    case 'prog_ent': c.tab='entrega';c.phase=5;c.state='Para entrega';c.tag='Moto asignada';c.tagc='p-green';c.grp='Entrega mañana';c.slot='Mañana 10:00 a. m.';log('Entrega programada.','Entrega');tab='entrega';toast('✔ Entrega programada');break;
+    case 'confirmar_ent': log('Moto entregada. Cliente pasa a Cobranza.','Entrega');CLIENTS.splice(CLIENTS.indexOf(c),1);toast('🏍️ Entrega registrada · pasa a Cartera de cobranza');sel=(CLIENTS.find(x=>x.tab===tab)||CLIENTS[0]||{}).id;break;
+    case 'reaplicar': c.tab='citados';c.phase=2;c.state='Reaplicó';c.tag='Reaplicó';c.tagc='p-blue';c.grp='Hoy · Reaplicaciones';c.slot='Reaplicó';log('Caso reabierto para reaplicar.','Decisión');tab='citados';toast('Caso reabierto');break;
+    case 'motivo': c.tab='rechazados';c.tag='Rechazado';c.tagc='p-red';c.state='Rechazado';c.grp='Rechazado hoy';c.slot='Rechazado hoy';c.motivo=nota||'Sin motivo indicado.';log('Marcado como rechazado: '+(nota||'sin motivo')+'.','Decisión');tab='rechazados';toast('Marcado como rechazado');break;
+    case 'llamar': log('Llamada realizada.','Llamada');toast('📞 Llamada registrada');break;
+    case 'wa': log('WhatsApp enviado.','WhatsApp');toast('💬 WhatsApp registrado');break;
+    case 'recordar': log('Recordatorio de cita enviado.','Cita');toast('Recordatorio enviado');break;
+    case 'seguim': log('Seguimiento programado.','Tarea');toast('Tarea creada');break;
+    case 'perdido': log('Cliente no responde (intento registrado).','Llamada');toast('Intento registrado');break;
+    case 'refer': log('Se solicitó referido.','CRM');toast('Solicitud de referido registrada');break;
+    case 'guardar': if(nota){log('Nota','Observación');toast('Nota guardada')}break;
+    case 'siguiente': { if(nota)log('Nota','Observación'); const arr=CLIENTS.filter(x=>x.tab===tab); const i=arr.indexOf(c); const n=arr[(i+1)%arr.length]; if(n)sel=n.id; toast('Siguiente cliente'); break;}
+  }
+  if(!cur()||!CLIENTS.includes(cur()))sel=(CLIENTS.find(x=>x.tab===tab)||CLIENTS[0]||{}).id;
+  renderAll();
+}
+
+/* ============ NUEVO EN SALA ============ */
+$('#btnNuevo').onclick=()=>{
+  const id=Math.max(...CLIENTS.map(c=>c.id))+1;
+  CLIENTS.unshift({id,name:'Cliente nuevo',ced:'V-__.___.___',tab:'citados',grp:'Hoy · Sin cita (directo)',slot:'En sala',origin:'directo',phase:1,state:'En sala',tel:'',moto:'—',plan:'—',inicial:'—',cuota:'—',f1:{},docs:D({}),tag:'Fase 1 por llenar',tagc:'p-orange',obs:[['Operador MR','11/11, '+new Date().toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'}),'Cliente llegó directo al concesionario.','Directo']]});
+  tab='citados';filt='todos';sel=id;renderAll();toast('Nuevo cliente directo: llene la fase 1');
+};
+$('#q').oninput=e=>{query=e.target.value;renderList()};
+
+/* atajos */
+document.addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+  const map={'1':'checkin','2':'noasist','3':'fase1','4':'reagendar','5':'nueva','6':'cotizar','7':'cargar','8':'pedir','9':'validar','0':'evaluar','p':'pagoini','c':'contrato','e':'prog_ent','y':'confirmar_ent','r':'reaplicar','m':'motivo','l':'llamar','w':'wa','t':'recordar','s':'seguim','x':'perdido','f':'refer'};
+  const id=map[e.key.toLowerCase()];
+  const b=id&&document.querySelector(`#dock .act[data-run="${id}"]:not(:disabled)`);
+  if(b)run(id);
+});
+
+function renderAll(){renderTabs();renderChips();renderList();renderKpis();renderCenter();renderObs();renderDock()}
+renderAll();
+</script>
+</body>
+</html>
