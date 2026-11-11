@@ -513,8 +513,6 @@ function renderCenter(){
     ${c.tab==='rechazados'?`<div class="banner red" style="margin:14px 0 0"><b>Motivo:</b> ${c.motivo}</div>`:''}
   </section>
 
-  <section class="dock" id="dock"></section>
-
   <section class="card pad" style="margin-top:12px">
     <div class="sech"><h2>Fase 1 · Datos del solicitante</h2><div class="r">${isDirectF1?'<button class="btn dark" data-q="guardarf1">Guardar fase 1</button>':'<button class="btn sm" data-q="editarf1">Editar</button>'}</div></div>
     ${f1html}
@@ -543,7 +541,9 @@ function renderCenter(){
         ${c.obs.slice(0,4).map(o=>`<li><time>${o[1].split(',')[0]}</time><span>${o[2]}</span></li>`).join('')||'<li class="mut">Sin eventos todavía.</li>'}
       </ul>
     </section>
-  </div>`;
+  </div>
+
+  <section class="dock" id="dock"></section>`;
 
   // eventos del centro
   $('#center').querySelectorAll('[data-doc]').forEach(b=>b.onclick=()=>{
